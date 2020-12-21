@@ -53,7 +53,7 @@ _Dans notre exemple nous utiliserons un certain nombre d'assertions._
 
 #### Dépôt geonature
 
-* Dans le dépôt git, la branche a utiliser est `master`.
+* Dans le dépôt git, la branche a utiliser est `main`.
 * Dans le dépôt git, les sources sont dans le répertoire racine (celui où est situé ce `README.md`).
 
 ### Etapes d'installation
@@ -67,9 +67,9 @@ cd /applications
 
 git clone https://github.com/PnX-SI/GeoNature-docker.git
 
-### Actuellement le bon contenu est dans la branche "master", il faut donc se mettre dessus (si vous venez de checkout, ce sera le cas directement).
+### Actuellement le bon contenu est dans la branche "main", il faut donc se mettre dessus (si vous venez de checkout, ce sera le cas directement).
 cd GeoNature-docker
-git checkout master
+git checkout main
 ```
 
 #### Construire l'image geonature (facultatif)
