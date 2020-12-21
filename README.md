@@ -1,6 +1,6 @@
-# Geonature-docker
+# GeoNature-docker
 
-Utilisation de Docker pour le déploiement de Geonature
+Utilisation de Docker pour le déploiement de GeoNature.
 
 ## Contributeurs
 
@@ -18,7 +18,7 @@ Ce _portage_ de GeoNature sous Docker a été réalisé par le [BRGM](https://ww
 ### Autres composants
 
 * [kartoza](https://github.com/kartoza) / [docker-postgis](https://github.com/kartoza/docker-postgis) : Base de données PostgreSQL + PostGIS
-* [Adminer](https://hub.docker.com/_/adminer/) : Application d'interfaçage avec la base de données
+* [pgAdmin](https://hub.docker.com/r/dpage/pgadmin4/) : Application d'interfaçage avec la base de données
 * [nginX](https://hub.docker.com/_/nginx/) : Reverse Proxy
 
 ## Architecture
@@ -47,18 +47,18 @@ Ce _portage_ de GeoNature sous Docker a été réalisé par le [BRGM](https://ww
 _Dans notre exemple nous utiliserons un certain nombre d'assertions._
 
 * Le répertoire `/applications` est la base de notre environnement de travail.
-* Le répertoire `/applications/projets` contiendra les différents Geonatures.
-* Le répertoire `/applications/geonature` contiendra le contenu du dépôt git de _geonature_.
+* Le répertoire `/applications/projets` contiendra les différents GeoNatures.
+* Le répertoire `/applications/geonature` contiendra le contenu du dépôt git de _GeoNature_.
 * Le répertoire `/applications/administration` contiendra les différents outils d'administration.
 
 #### Dépôt geonature
 
-* Dans le dépôt git, la branche a utiliser est `main`.
+* Dans le dépôt git, la branche à utiliser est `main`.
 * Dans le dépôt git, les sources sont dans le répertoire racine (celui où est situé ce `README.md`).
 
 ### Etapes d'installation
 
-#### Cloner le dépôt _geonature-docker_ sur la machine
+#### Cloner le dépôt _GeoNature-docker_ sur la machine
 
 ```bash
 mkdir -p /applications
@@ -72,7 +72,7 @@ cd GeoNature-docker
 git checkout main
 ```
 
-#### Construire l'image geonature (facultatif)
+#### Construire l'image GeoNature (facultatif)
 
 _Cette étape est facultative si l'image peut-être récupérée d'un registre Docker ou bien si le CI/CD du projet est mis en place._
 
@@ -81,7 +81,7 @@ _Cette étape est facultative si l'image peut-être récupérée d'un registre D
 docker build --force-rm -t geonature:geonature-verified .
 ```
 
-#### Créer un répertoire pour le geonature que l'on veut déployer
+#### Créer un répertoire pour le GeoNature que l'on veut déployer
 
 ```bash
 mkdir -p /applications/projets/geonature.brgm-rec.fr
@@ -166,15 +166,15 @@ Si vous avez besoin de changer l'URL de l'application (changement de DNS, ou bie
 
 Modifiez le `.env` pour mettre à jour l'URL et le protocole. Ce fichier est quand même réutilisé pour créer les `settings.ini` des différentes applications.
 
-#### Configuration Usershub
+#### Configuration UsersHub
 
 Modifiez le fichier `geonature_common/usershub/config/config.py` en remplaçant la valeur de la variable `URL_APPLICATION`.
 
-#### Configuration Taxhub
+#### Configuration TaxHub
 
 _Taxhub_ n'utilise que le fichier `settings.ini`.
 
-#### Configuration Geonature
+#### Configuration GeoNature
 
 Modifier le fichier `geonature_common/geonature/config/geonature_config.toml` en remplaçant les valeurs pour `URL_APPLICATION`, `API_ENDPOINT` et `API_TAXHUB`.
 
