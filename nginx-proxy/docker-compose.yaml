@@ -1,0 +1,19 @@
+version: '3.7'
+
+networks:
+  rpx_net:
+    name: rpx_net
+    driver: bridge
+
+services:
+  proxy:
+    image: jwilder/nginx-proxy:alpine
+    networks:
+      - rpx_net
+    volumes:
+      - "/var/run/docker.sock:/tmp/docker.sock:ro"
+      - "/applications/administration/nginx-proxy/certificates/:/etc/nginx/certs"
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: unless-stopped

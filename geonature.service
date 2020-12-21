@@ -1,0 +1,17 @@
+[Unit]
+Description=##Geonature##
+Requires=docker.service
+After=docker.service
+Wants=nginx-proxy.service
+
+[Service]
+Restart=always
+RemainAfterExit=yes
+WorkingDirectory=/applications/projets/##geonature##
+
+ExecStart=/usr/local/bin/docker-compose -f /applications/geonature/docker-compose.yml -p ##geonature## up
+
+ExecStop=/usr/local/bin/docker-compose -f /applications/geonature/docker-compose.yml -p ##geonature## down
+
+[Install]
+WantedBy=multi-user.target

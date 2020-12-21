@@ -1,0 +1,16 @@
+[Unit]
+Description=Reverse proxy Nginx
+Requires=docker.service
+After=docker.service
+
+[Service]
+Restart=always
+RemainAfterExit=yes
+WorkingDirectory=/applications/administration/nginx-proxy
+
+ExecStart=/usr/local/bin/docker-compose -f /applications/administration/nginx-proxy/docker-compose.yaml up
+
+ExecStop=/usr/local/bin/docker-compose -f /applications/administration/nginx-proxy/docker-compose.yaml down
+
+[Install]
+WantedBy=multi-user.target
