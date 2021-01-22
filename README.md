@@ -60,15 +60,17 @@ _Dans notre exemple nous utiliserons un certain nombre d'assertions._
 
 #### Cloner le dépôt _GeoNature-docker_ sur la machine
 
+Dans cet exemple, le dossier système `/applications` est le dossier dédié aux applications Docker.
+
 ```bash
 mkdir -p /applications
 
 cd /applications
 
-git clone https://github.com/PnX-SI/GeoNature-docker.git
+git clone https://github.com/PnX-SI/GeoNature-docker.git geonature
 
 ### Actuellement le bon contenu est dans la branche "main", il faut donc se mettre dessus (si vous venez de checkout, ce sera le cas directement).
-cd GeoNature-docker
+cd geonature
 git checkout main
 ```
 
@@ -78,25 +80,26 @@ _Cette étape est facultative si l'image peut-être récupérée d'un registre D
 
 ```bash
 ### Dans le répertoire _app__, il faut adapter le nom du tag
-docker build --force-rm -t geonature:geonature-verified .
+docker build --force-rm -t geonature:geonature-verified app/
 ```
 
-#### Créer un répertoire pour le GeoNature que l'on veut déployer
+#### Créer un répertoire pour le GeoNature que l'on veut déployer, par exemple en spécifiant votre domaine (remplacer `<mondomaine.org>` par le nom de votre choix).
 
 ```bash
-mkdir -p /applications/projets/geonature.brgm-rec.fr
+mkdir -p /applications/projets/<mondomaine.org>
 ```
 
 #### Copier l'environnement
 
 ```bash
-cp /applications/geonature/env.sample /applications/projets/geonature.brgm-rec.fr/.env
+cp /applications/geonature/env.sample /applications/projets/<mondomaine.org>/.env
+cp /applications/geonature/docker-compose.yaml /applications/projets/<mondomaine.org>/
 ```
 
 #### Editer l'environnement
 
 ```bash
-vim /applications/projets/geonature.brgm-rec.fr/.env
+vim /applications/projets/<mondomaine.org>/.env
 ```
 
 _Exemple de configuration (dans cet exemple, une image déjà présente est utilisé, si vous avez construit l'image docker par vous même, indiquez ici son tag):_
