@@ -1,6 +1,6 @@
 # GeoNature-docker
 
-Utilisation de Docker pour le déploiement de GeoNature.
+Utilisation de Docker pour le déploiement de GeoNature dans le cadre d'un hébergement mutualisé (plusieurs instances GeoNature hébergées par sur un serveur commun).
 
 ## Contributeurs
 
@@ -44,10 +44,17 @@ Ce _portage_ de GeoNature sous Docker a été réalisé par le [BRGM](https://ww
 
 ### Prérequis/Informations initiales
 
+#### Dépendances
+
+Ce projet nécessite l'installation préalable de:
+* [docker](https://docs.docker.com/engine/install/)
+* [git](https://git-scm.com/download/linux)
+* [docker-compose](https://docs.docker.com/compose/install/)
+
 _Dans notre exemple nous utiliserons un certain nombre d'assertions._
 
 * Le répertoire `/applications` est la base de notre environnement de travail.
-* Le répertoire `/applications/projets` contiendra les différents GeoNatures.
+* Le répertoire `/applications/projets` contiendra les différents instances de GeoNature.
 * Le répertoire `/applications/geonature` contiendra le contenu du dépôt git de _GeoNature_.
 * Le répertoire `/applications/administration` contiendra les différents outils d'administration.
 
@@ -60,15 +67,16 @@ _Dans notre exemple nous utiliserons un certain nombre d'assertions._
 
 #### Cloner le dépôt _GeoNature-docker_ sur la machine
 
+
 ```bash
 mkdir -p /applications
 
 cd /applications
 
-git clone https://github.com/PnX-SI/GeoNature-docker.git
+git clone https://github.com/PnX-SI/GeoNature-docker.git geonature
 
 ### Actuellement le bon contenu est dans la branche "main", il faut donc se mettre dessus (si vous venez de checkout, ce sera le cas directement).
-cd GeoNature-docker
+cd geonature
 git checkout main
 ```
 
@@ -78,25 +86,26 @@ _Cette étape est facultative si l'image peut-être récupérée d'un registre D
 
 ```bash
 ### Dans le répertoire _app__, il faut adapter le nom du tag
-docker build --force-rm -t geonature:geonature-verified .
+docker build --force-rm -t geonature:geonature-verified app/
 ```
 
-#### Créer un répertoire pour le GeoNature que l'on veut déployer
+#### Créer un répertoire pour le GeoNature que l'on veut déployer, par exemple en spécifiant votre domaine (remplacer `<mondomaine.org>` par le nom de votre choix).
 
 ```bash
-mkdir -p /applications/projets/geonature.brgm-rec.fr
+mkdir -p /applications/projets/<mondomaine.org>
 ```
 
 #### Copier l'environnement
 
 ```bash
-cp /applications/geonature/env.sample /applications/projets/geonature.brgm-rec.fr/.env
+cp /applications/geonature/env.sample /applications/projets/<mondomaine.org>/.env
+cp /applications/geonature/docker-compose.yaml /applications/projets/<mondomaine.org>/
 ```
 
 #### Editer l'environnement
 
 ```bash
-vim /applications/projets/geonature.brgm-rec.fr/.env
+vim /applications/projets/<mondomaine.org>/.env
 ```
 
 _Exemple de configuration (dans cet exemple, une image déjà présente est utilisé, si vous avez construit l'image docker par vous même, indiquez ici son tag):_
@@ -158,6 +167,31 @@ systemctl enable geonature --now
 
 ## Mise à jour de la configuration
 
+### Installer un module
+
+L'installation des modules se fait indépendamment dans chacune des instance. Il faut pour cela se connecter terminal du conteneur. Suivez ensuite la démarche habituelle d'installation du module. Ici un exemple avec le module [gn_module_dashboard](https://github.com/PnX-SI/gn_module_dashboard).
+
+```bash
+docker ps
+# On récupère le nom ou le hash du container de geonature pour lancer un exec dessus
+docker exec -it <id ou nom de mon conteneur geonature> /bin/bash
+
+mkdir -p /geonature/gn_modules
+cd /geonature/gn_modules
+
+# Téléchargement, décompression et configuration du module
+wget https://github.com/PnX-SI/gn_module_dashboard/archive/0.2.0.zip 
+unzip 0.2.0.zip
+mv gn_module_dashboard_0.2.0 gn_module_dashboard
+
+# Finalisation de l'installation du module
+# On initialize l'environnement virtuel python de GeoNature
+source /geonature/geonature/backend/venv/bin/activate
+# On installe le module GeoNature avec la commande : geonature install_gn_module <chemin absolu vers mon module> <url relative du module>
+geonature install_gn_module /geonature/gn_modules/gn_module_dashboard dashboard
+
+```
+
 ### Changement d'URL de l'application
 
 Si vous avez besoin de changer l'URL de l'application (changement de DNS, ou bien passage de http à https), il ne suffit pas de modifier le `.env` pour que celà fonctionne. En effet, les fichiers de configuration de l'application étant transformés pour le front et dans une moindre mesure pour la partie Python, il faut aussi modifier ces fichiers là.
@@ -182,8 +216,8 @@ Ensuite, il faut lancer la mise à jour de la configuration à l'application.
 
 ```bash
 docker ps
-# On récupère le hash du container de geonature pour lancer un exec dessus
-docker exec -it xxxx /bin/bash
+# On récupère le nom ou le hash du container de geonature pour lancer un exec dessus
+docker exec -it <id ou nom de mon conteneur geonature> /bin/bash
 # Les commande suivantes sont à exécuter dans le container
 # On va dans le Frontend
 cd /geonature/geonature/frontend
