@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -e
 script_home_dir=/geonature
 bootstrap_dir=/bootstrap_files
 verbose=1
@@ -11,11 +11,11 @@ export UH_HOME=${script_home_dir}/usershub
 
 cd $script_home_dir
 
-_verbose_echo "${orange}Début d'installation de UsersHub!${nocolor}"
+_verbose_echo "${orange}Début d'installation de UsersHub version ${UH_VERSION} !${nocolor}"
 
 ## UserHub
-wget -q "https://github.com/PnX-SI/UsersHub/archive/${UH_VERSION}.zip"
-unzip -q "${UH_VERSION}.zip"
+wget "https://github.com/PnX-SI/UsersHub/archive/${UH_VERSION}.zip"
+unzip "${UH_VERSION}.zip"
 mv UsersHub-${UH_VERSION} ${UH_HOME}/
 cp ${bootstrap_dir}/uh.settings.ini ${UH_HOME}/config/settings.ini
 

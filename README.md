@@ -137,7 +137,7 @@ docker network create rpx_net
 ```bash
 mkdir -p /applications/administration
 
-cp nginx-proxy /applications/administration/nginx-proxy
+cp -r nginx-proxy /applications/administration/nginx-proxy
 
 ```
 

@@ -61,7 +61,7 @@ function wait_for_restart
     fi
     sleep_time=$3
     if [[ "x$3" = "x" ]]; then
-        sleep_time=5s
+        sleep_time=1s
     fi
 
     wait-for-it -t ${timeout} ${service_connection}
@@ -151,4 +151,113 @@ function wait_for_file
         wait_message=$3
     fi
     while [ ! -f $file_to_wait ]; do sleep $repeat_timer; echo "${wait_message}"; done
+}
+
+
+# recupération d'un depot et mise à la bonne version
+function get_depot_git
+{
+    cur=$(pwd)
+
+    depot=$1
+    version=$2
+    dir_depot=$3
+    
+    if [ -d "${dir_depot}" ] && [ ! -d "${dir_depot}/.git" ]; then
+        rm -R ${dir_depot}
+    fi
+
+    if [[ ! -d "${dir_depot}" ]]; then
+        git clone ${depot} -b ${version} --single-branch --depth=1 ${dir_depot}
+    else
+        cd $dir_depot
+        # test si la branche existe
+        if git rev-parse --verify ${version}; then
+            git checkout ${version};
+            if git show-ref --verify --quiet refs/tags/${version}; then
+                a=1 # pass
+            else
+                git pull origin ${version} --depth=1;
+            fi
+        else
+            git fetch origin ${version}:${version} --depth=1;
+            git checkout ${version};
+        fi 
+        cd $cur
+    fi
+}
+
+
+# liste les fichiers de migrations à jouer entre deux version pour une appli
+# ARGS :    
+#   $1 : version installee
+#   $2 : version objectif
+#   $3 : chemin (absolu) vers le repertoire contenant les fichiers de migration
+# return (echo) : liste des fichiers
+function migration_db_list_files 
+{
+    version_cur=$1
+    version_target=$2
+    migration_data_dir=$3
+
+    tags=$(git ls-remote --tags 2>/dev/null | awk '{print $2}' | sed -s 's#refs/tags/##' | grep -v 'rc' )
+
+    test_cur=$(echo $tags | grep "$version_cur")
+    test_target=$(echo $tags | grep "$version_target")
+
+    if [ -z "$test_cur" ] ; then
+        exit 1
+        echo Version cur $version_cur non ok
+        echo $tags
+    fi
+
+    if [ -z "$test_target" ] ; then
+        exit 1
+        echo Version target $version_target non ok
+        echo $tags
+    fi
+
+    test_cur=''
+    test_target=''
+    res=''
+
+    for t in $tags
+    do
+        if [ "$t" = "$version_cur" ]; then
+            test_cur=1
+        fi
+
+        if   [ ! -z "$test_cur" ] \
+            && [ -z "$test_target" ] \
+            && [ ! -z "$t_prev" ] \
+            && inter="$(ls $migration_data_dir/*${t_prev}to${t}*.sql 2> /dev/null)" \
+            ;  then
+                echo $inter
+        fi  
+
+        if [ "$t" = "$version_target" ]; then
+            test_target=1
+        fi
+
+        if [ ! -z ${test_cur} ]; then
+            t_prev=$t
+        fi
+    done
+}
+
+
+# ARG   $1 sysfiledir
+#       $2 application
+function get_version_installee
+{
+
+    sysfiledir=$1
+    application=$2
+
+    version_installee=''
+    if [ -f /$sysfiledir/${application}_installed ]; then
+        version_installee=$(cat /$script_home_dir/sysfiles/${application}_installed) 
+    fi
+
+    echo $version_installee
 }

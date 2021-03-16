@@ -11,7 +11,7 @@ export TH_HOME=${script_home_dir}/taxhub
 
 cd $script_home_dir
 
-_verbose_echo "${orange}Début d'installation de TaxHub!${nocolor}"
+_verbose_echo "${orange}Début d'installation de TaxHub  !${nocolor}"
 
 ## TaxHub
 wget -q "https://github.com/PnX-SI/TaxHub/archive/${TH_VERSION}.zip"

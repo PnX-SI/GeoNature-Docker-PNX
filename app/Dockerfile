@@ -23,10 +23,6 @@ ENV LANGUAGE fr_FR:fr
 ENV LC_ALL fr_FR.UTF-8
 
 RUN pip3 install --upgrade pip virtualenv virtualenvwrapper
-ADD ./utils.lib.sh /usr/local/
-
-ADD ./launch_app.sh /
-RUN chmod a+rx /launch_app.sh /usr/local/utils.lib.sh
 
 RUN mkdir /home/geonatureadmin \
     && useradd -s /bin/bash -G sudo geonatureadmin \
@@ -45,5 +41,11 @@ USER geonatureadmin
 RUN cp /etc/skel/.bashrc /etc/skel/.bash_logout /etc/skel/.profile /home/geonatureadmin/ \
     && pip install MarkupSafe==1.0
 RUN wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.33.6/install.sh | bash
+
+# raster2psql ??
+RUN sudo apt-get install -y postgis  
+ADD ./utils.lib.sh /usr/local/
+ADD ./launch_app.sh /
+RUN sudo chmod a+rx /launch_app.sh /usr/local/utils.lib.sh
 
 ENTRYPOINT ["/launch_app.sh"]
