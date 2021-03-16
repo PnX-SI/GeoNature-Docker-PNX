@@ -43,8 +43,11 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASS=${POSTGRES_PASS}
       - GEONATURE_VERSION=${GEONATURE_VERSION}
+      - RESET_ALL=${RESET_ALL}
+      - DEBUG=${DEBUG}
       - http_proxy=${HTTP_PROXY}
       - https_proxy=${HTTP_PROXY}
+      - SRID_LOCAL=${SRID_LOCAL}
     networks:
       - geonat
 

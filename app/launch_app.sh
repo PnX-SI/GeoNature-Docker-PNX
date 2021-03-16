@@ -67,8 +67,9 @@ cp ${bootstrap_dir}/th.settings.ini ${TH_HOME}/settings.ini
 
 # Installation de la bdd (si besoin)
 
+echo $RESET_ALL erter
 if $RESET_ALL; then
-rm -f /$script_home_dir/sysfiles/*_installed
+    rm -f /$script_home_dir/sysfiles/*_installed
 fi
 # echo 2.5.5 > /$script_home_dir/sysfiles/geonature_installed
 

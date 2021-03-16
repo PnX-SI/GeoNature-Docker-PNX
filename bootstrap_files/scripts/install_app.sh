@@ -79,7 +79,9 @@ elif [ -z "$version_installee" ]; then
 
 
     chmod +x install_app2.sh 
+
     ./install_app2.sh
+
     rm ./install_app2.sh
 
     echo $version_depot > /$script_home_dir/sysfiles/${application}_installed
@@ -111,7 +113,7 @@ else
         export PGPASSWORD=${user_pg_pass}; psql -h ${db_host} -d ${db_name} -U ${user_pg} -p ${db_port} -f $file >> $update_db_log 2>> $update_db_log
     done
 
-    cat $update_db_log | grep -i ERR
+    cat $update_db_log | grep -i ERR || true
 
 
     # mise à jour des applications
@@ -121,11 +123,10 @@ else
     cd ${APP_HOME}/${FRONTEND_DIR}    
     export NVM_DIR="$HOME/.nvm"
     . "$NVM_DIR/nvm.sh" || true  # This loads nvm
-    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-
     nvm install
-    npm ci
-
+    nvm use
+    npm ci --only=prod
+ 
     if [ "$application" = "geonature" ]; then
         geonature update_configuration --build=false
         geonature generate_frontend_modules_route

@@ -15,8 +15,12 @@ psqlg='psql -h ${db_host} -d postgres -U ${user_pg} -p ${db_port}';
 cat ./install_db.sh >> ./install_db_2.sh
 sed -i '/^check_superuser$/d' ./install_db_2.sh
 sed -i '/postgresql.conf/d' ./install_db_2.sh
+sed -i 's/if $drop_apps_db/echo $drop_apps_db; if $drop_apps_db/' ./install_db_2.sh
 sed -i 's/sudo -n -u postgres -s createdb.*/${psqlg} -c "CREATE DATABASE ${db_name};"/' ./install_db_2.sh    
-sed -i 's/sudo -u postgres -s dropdb.*/${psqlg} -c "DROP DATABASE ${db_name};"/' ./install_db_2.sh    
+sed -i 's/sudo -u postgres -s dropdb.*/\
+query="SELECT pg_terminate_backend(pg_stat_activity.pid)\
+ FROM pg_stat_activity WHERE pg_stat_activity.datname = '\'${db_name}\''\
+ AND pid <> pg_backend_pid() ;"; ${psqlg} -c "${query}"; ${psqlg} -c "DROP DATABASE ${db_name};";/' ./install_db_2.sh    
 sed -i 's/sudo -n -u "postgres" -s dropdb.*/${psqlg} -c "DROP DATABASE ${db_name};"/' ./install_db_2.sh    
 sed -i 's/sudo -n -u postgres -s psql -d "${db_name}"/${psqla}/' ./install_db_2.sh
 sed -i 's/sudo -n -u postgres -s psql -d $db_name/${psqla}/' ./install_db_2.sh
@@ -27,5 +31,5 @@ sed -i 's/unzip/unzip -n/' ./install_db_2.sh
 sed -i '/sudo service postgresql restart/d' ./install_db_2.sh
 chmod +x ./install_db_2.sh
 
-# cat ./install_db_2.sh | grep sudo 
+
 ./install_db_2.sh
