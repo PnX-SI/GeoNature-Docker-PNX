@@ -2,6 +2,9 @@
 
 set -e
 
+if $DEBUG; then 
+set -x
+fi
 
 script_home_dir=/geonature
 mnt_bootstrap_dir=/mnt_bootstrap_files
@@ -64,7 +67,10 @@ cp ${bootstrap_dir}/th.settings.ini ${TH_HOME}/settings.ini
 
 # Installation de la bdd (si besoin)
 
-rm /$script_home_dir/sysfiles/*_installed
+if $RESET_ALL; then
+rm -f /$script_home_dir/sysfiles/*_installed
+fi
+# echo 2.5.5 > /$script_home_dir/sysfiles/geonature_installed
 
 version_geonature_depot=$GEONATURE_VERSION
 version_geonature_installee=$(get_version_installee /$script_home_dir/sysfiles geonature)
@@ -83,7 +89,9 @@ if [ "$version_geonature_installle" != "$version_geonature_depot" ] \
     || [ "$version_taxhub_installle" != "$version_taxhub_depot" ] \
     ; then
 
-    sudo /usr/bin/supervisord &
+    # sudo /usr/bin/supervisord &
+    # sleep 5
+
     for app in 'geonature' 'usershub' 'taxhub'; do
 
 
@@ -94,15 +102,13 @@ if [ "$version_geonature_installle" != "$version_geonature_depot" ] \
         version_installee=${!version_installee}
         
         /bin/bash ${bootstrap_dir}/scripts/install_app.sh ${app} ${version_depot} ${version_installee}
-        
 
     done
 
-    sudo supervisorctl stop all
-    sleep 5
-    sudo supervisorctl shutdown
-    sleep 5
-
+    # sudo supervisorctl stop all
+    # sleep 5
+    # sudo supervisorctl shutdown
+    # sleep 5
 fi
 
 if [[ ! -z $1 ]]; then
