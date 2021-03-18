@@ -32,4 +32,4 @@ sed -i '/sudo service postgresql restart/d' ./install_db_2.sh
 chmod +x ./install_db_2.sh
 
 
-./install_db_2.sh
+. install_db_2.sh
