@@ -1,0 +1,49 @@
+#############################################
+# GeoNature backend global configuration file
+#############################################
+
+# Database
+SQLALCHEMY_DATABASE_URI = "postgresql://geonature:geonature@db:5432/geonature"
+URL_APPLICATION = 'https://127.0.0.1/geonature' 
+API_ENDPOINT = 'https://127.0.0.1/geonature/api'
+API_TAXHUB = 'https://127.0.0.1/taxhub/api'
+
+# Remplacer par une clé alétoire complexe
+SECRET_KEY = 'super secret key'
+
+# Code EPSG des geométries dans la BDD
+LOCAL_SRID = '2154'
+
+# Langue principale par défaut
+DEFAULT_LANGUAGE='fr'
+
+
+#######################################################################################
+###### Si vous souhaitez surcoucher certains paramètres,
+###### compléter les sections ci-dessous à partir du modèle default_config.toml.example
+#######################################################################################
+
+# Configuration liée aux ID de BDD
+[BDD]
+
+# Configuration générale du frontend
+[FRONTEND]
+
+# Configuration de la Synthese
+[SYNTHESE]
+
+# Configuration cartographique
+[MAPCONFIG]
+
+# Configuration médias
+[MEDIAS]
+
+[MAIL_CONFIG]
+    MAIL_SERVER = 'mail.espaces-naturels.fr'
+    MAIL_PORT = 465
+    MAIL_USE_TLS = false
+    MAIL_USE_SSL = true
+    MAIL_USERNAME = 'joel.clement@cevennes-parcnational.fr'
+    MAIL_PASSWORD = 'Jc2018pnc;'
+    MAIL_DEFAULT_SENDER = 'joel.clement@cevennes-parcnational.fr'
+    MAIL_ASCII_ATTACHMENTS = false

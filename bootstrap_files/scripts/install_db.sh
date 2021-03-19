@@ -1,8 +1,18 @@
-. ${GN_HOME}/config/settings.ini
-cd $GN_HOME/install
+
+get_depot_git geonature $(get_version geonature)
+manage_assets geonature
+. $script_home_dir/geonature/config/settings.ini
+
+cd $script_home_dir/geonature/install
 
 # gros bazar pour pimpoer install_db.sh 
 # principalement pour enlever les "sudo -n -u postgres" 
+
+# version   
+cat $script_home_dir/geonature/config/settings.ini.sample | grep release > /$script_home_dir/geonature/config/release.ini
+cat /$script_home_dir/geonature/config/release.ini
+. /$script_home_dir/geonature/config/release.ini
+
 
 echo "set -e;" > ./install_db_2.sh
 if $DEBUG; then 
@@ -31,5 +41,4 @@ sed -i 's/unzip/unzip -n/' ./install_db_2.sh
 sed -i '/sudo service postgresql restart/d' ./install_db_2.sh
 chmod +x ./install_db_2.sh
 
-
-. install_db_2.sh
+. install_db_2.sh && set_version_installed db $(get_version geonature)

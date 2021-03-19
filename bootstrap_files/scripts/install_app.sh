@@ -5,6 +5,20 @@ set -x
 fi
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 application=$1
 version_depot=$2
 version_installee=$3

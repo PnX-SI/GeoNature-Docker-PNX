@@ -42,10 +42,23 @@ RUN cp /etc/skel/.bashrc /etc/skel/.bash_logout /etc/skel/.profile /home/geonatu
     && pip install MarkupSafe==1.0
 RUN wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.33.6/install.sh | bash
 
+# install node and npm
+ENV NODE_VERSION 10.15.3
+ENV NVM_DIR /home/geonatureadmin/.nvm
+RUN . $NVM_DIR/nvm.sh \
+    && nvm install $NODE_VERSION  \
+    && nvm alias default $NODE_VERSION  \
+    && nvm use $NODE_VERSION 
+
+ENV NODE_PATH $NVM_DIR/v$NODE_VERSION/lib/node_modules
+ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
+
+
 # raster2psql ??
-RUN sudo apt-get install -y postgis  
+#RUN sudo apt-get install -y postgis  
 ADD ./utils.lib.sh /usr/local/
+ADD ./utils.lib.install.sh /usr/local/
 ADD ./launch_app.sh /
-RUN sudo chmod a+rx /launch_app.sh /usr/local/utils.lib.sh
+RUN sudo chmod a+rx /launch_app.sh /usr/local/utils.lib.sh /usr/local/utils.lib.install.sh
 
 ENTRYPOINT ["/launch_app.sh"]

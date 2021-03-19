@@ -46,3 +46,5 @@ pgdata/**
 !pgdata/.gitkeep
 geonature_common/**
 !geonature_common/.gitkeep
+projets/
+administration/

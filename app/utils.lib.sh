@@ -154,38 +154,6 @@ function wait_for_file
 }
 
 
-# recupération d'un depot et mise à la bonne version
-function get_depot_git
-{
-    cur=$(pwd)
-
-    depot=$1
-    version=$2
-    dir_depot=$3
-    
-    if [ -d "${dir_depot}" ] && [ ! -d "${dir_depot}/.git" ]; then
-        rm -R ${dir_depot}
-    fi
-
-    if [[ ! -d "${dir_depot}" ]]; then
-        git clone ${depot} -b ${version} --single-branch --depth=1 ${dir_depot}
-    else
-        cd $dir_depot
-        # test si la branche existe
-        if git rev-parse --verify ${version}; then
-            git checkout ${version};
-            if git show-ref --verify --quiet refs/tags/${version}; then
-                a=1 # pass
-            else
-                git pull origin ${version} --depth=1;
-            fi
-        else
-            git fetch origin ${version}:${version} --depth=1;
-            git checkout ${version};
-        fi 
-        cd $cur
-    fi
-}
 
 
 # liste les fichiers de migrations à jouer entre deux version pour une appli
@@ -246,18 +214,3 @@ function migration_db_list_files
 }
 
 
-# ARG   $1 sysfiledir
-#       $2 application
-function get_version_installee
-{
-
-    sysfiledir=$1
-    application=$2
-
-    version_installee=''
-    if [ -f /$sysfiledir/${application}_installed ]; then
-        version_installee=$(cat /$script_home_dir/sysfiles/${application}_installed) 
-    fi
-
-    echo $version_installee
-}
