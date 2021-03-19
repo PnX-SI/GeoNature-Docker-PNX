@@ -57,7 +57,7 @@ done
 
 
 # pour ne pas refaire un build à chaque module
-if [ -z "$rebuild_for_modules" ]; then
+if [ ! -z "$rebuild_for_modules" ]; then
     source $script_home_dir/geonature/backend/venv/bin/activate
     geonature frontend_build
 fi

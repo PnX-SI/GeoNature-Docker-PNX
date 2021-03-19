@@ -270,7 +270,7 @@ function set_version_installed
 function get_version
 {
     name=$1
-    for name_version in $(echo $APPLICATIONS $MODULES_GEONATURE)
+    for name_version in $(echo $APPLICATIONS $MODULES_GEONATURE $MODULES_MONITORING)
     do
       test="$(echo $name_version | grep $name)"
       if [ ! -z "$test" ]; then
