@@ -36,7 +36,7 @@ RUN mkdir /geonature /bootstrap_files /mnt_bootstrap_files && chown geonatureadm
 VOLUME /geonature
 VOLUME /mnt_bootstrap_files
 
-USER geonatureadmin
+USER geonatureadmin 
 
 RUN cp /etc/skel/.bashrc /etc/skel/.bash_logout /etc/skel/.profile /home/geonatureadmin/ \
     && pip install MarkupSafe==1.0

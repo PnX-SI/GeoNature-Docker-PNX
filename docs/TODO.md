@@ -1,5 +1,10 @@
 TODO
 
+supervisor  
+script bootstrap ???
+depot.ini dans bootstrap ???
+
+
 INSTALLATION
 
 schema ATLAS
