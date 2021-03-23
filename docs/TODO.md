@@ -1,16 +1,14 @@
 TODO
 
-supervisor  
-script bootstrap ???
-depot.ini dans bootstrap ???
+- Installations dans log ??
 
+- supervisor  
+- MAJ
+  - application
+  - module
 
-INSTALLATION
+- schema ATLAS ??
 
-schema ATLAS
-
-sous module monitoring
+- test erreurs dans install_db
 
 tests!!!!
-
-MISE A JOUR TEST à faire
