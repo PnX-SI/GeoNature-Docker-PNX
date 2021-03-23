@@ -42,11 +42,12 @@ export ALL_DEPOTS="${APPLICATIONS} ${MODULES_GEONATURE} ${MODULES_MONITORING}"
 
 if $RESET_ALL; then
 
+    _verbose_echo "${green}launch_app - ${nocolor}RESET"
+
     # effacement des :
 
     # - config supervisor
     rm -f ${script_home_dir}/sysfiles/supervisor/*.conf
-    sudo rm -f /etc/supervisor/conf.d/*
 
     # version installée
     rm -f /$script_home_dir/sysfiles/installed/*
@@ -69,7 +70,6 @@ sudo cp ${script_home_dir}/sysfiles/supervisor/*.conf /etc/supervisor/conf.d/ ||
 sudo /usr/bin/supervisord&
 sleep 1
 sudo supervisorctl stop all
-
 
 _verbose_echo "${green}launch_app - ${nocolor}Copie des scripts du volume vers ${bootstrap_dir} et droits"
 sudo cp -R ${mnt_bootstrap_dir}/* ${bootstrap_dir}/
@@ -109,8 +109,14 @@ fi
 
 # supervisor
 
-# save supervisor files
+# save supervisor files & stop
 sudo cp /etc/supervisor/conf.d/* ${script_home_dir}/sysfiles/supervisor/
+sudo supervisorctl reread
+sudo supervisorctl reload
+sudo supervisorctl stop all
+sudo supervisorctl shutdown
+
+
 
 if [[ ! -z $1 ]]; then
 
@@ -124,9 +130,5 @@ else
     # ?? à optimiser
 
     _verbose_echo "${green}launch_app - ${nocolor}Relacement de supervisor en tâche principale"
-    sudo supervisorctl reread
-    sudo supervisorctl shutdown
-    sleep 5
-    sudo /usr/bin/supervisord 
-    
+    sudo /usr/bin/supervisord
 fi

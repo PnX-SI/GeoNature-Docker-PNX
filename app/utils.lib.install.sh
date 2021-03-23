@@ -53,20 +53,28 @@ function manage_assets
         cp ${bootstrap_dir}/${name}.settings.ini $script_home_dir/$name/$CONFIG_DIR/settings.ini
     fi
 
-    # geonature_config.toml
-    #
+    # geonature_config.toml et config.py traitement communs ..???..
     # on renseigne ce qui peut l'être depuis le fichier settings.ini
+    # SQLALCHEMY_DATABASE_URI, URL_APPLICATION, etc...
 
-    if [ "$name" = "geonature" ]; then
-        geonature_config=$script_home_dir/$name/$CONFIG_DIR/geonature_config.toml
-        cp ${bootstrap_dir}/geonature_config.toml $geonature_config
+    file_config=""
+
+    if [ "$name" = "geonature" ]; then    
+        file_config=$script_home_dir/$name/$CONFIG_DIR/geonature_config.toml
+        file_bootstrap=${bootstrap_dir}/geonature_config.toml
+    elif echo "usershub taxhub" | grep $name; then
+        file_config=$script_home_dir/$name/$CONFIG_DIR/config.py
+        file_bootstrap=${bootstrap_dir}/${name}.config.py
+    fi
+
+    if [ ! -z "$file_config"]; then
+        cp $file_bootstrap $file_config
         . $script_home_dir/$name/$CONFIG_DIR/settings.ini
-
-        sed -i "s|SQLALCHEMY_DATABASE_URI.*|SQLALCHEMY_DATABASE_URI = 'postgresql://${user_pg}:${user_pg_pass}@${db_host}:${db_port}/${db_name}'|" $geonature_config
-        sed -i "s|URL_APPLICATION.*|URL_APPLICATION = '${GEONATURE_PROTOCOL}://${GEONATURE_DOMAIN}/geonature'|" $geonature_config
-        sed -i "s|API_ENDPOINT.*|API_ENDPOINT = '${GEONATURE_PROTOCOL}://${GEONATURE_DOMAIN}/geonature/api'|" $geonature_config
-        sed -i "s|API_TAXHUB.*|API_TAXHUB = '${GEONATURE_PROTOCOL}://${GEONATURE_DOMAIN}/taxhub/api'|" $geonature_config
-        sed -i "s/LOCAL_SRID.*/LOCAL_SRID = '${srid_local}'/" $geonature_config
+        sed -i "s|SQLALCHEMY_DATABASE_URI.*|SQLALCHEMY_DATABASE_URI = 'postgresql://${user_pg}:${user_pg_pass}@${db_host}:${db_port}/${db_name}'|" $file_config
+        sed -i "s|URL_APPLICATION.*|URL_APPLICATION = '${GEONATURE_PROTOCOL}://${GEONATURE_DOMAIN}/$name'|" $file_config
+        sed -i "s|API_ENDPOINT.*|API_ENDPOINT = '${GEONATURE_PROTOCOL}://${GEONATURE_DOMAIN}/geonature/api'|" $file_config
+        sed -i "s|API_TAXHUB.*|API_TAXHUB = '${GEONATURE_PROTOCOL}://${GEONATURE_DOMAIN}/taxhub/api'|" $file_config
+        sed -i "s/LOCAL_SRID.*/LOCAL_SRID = '${srid_local}'/" $file_config
     fi
 
 }
@@ -138,8 +146,9 @@ function install_or_update
         # on procède à la mise à jour (TODO)
 
         _verbose_echo "${green}launch_app - ${nocolor}Mise à jour ${DEPOT_TYPE} ${name} ${version_voulue}"
-        # [[ "$DEPOT_TYPE" = "application" ]] && update_application $name;
-        # [[ "$DEPOT_TYPE" = "module_geonature" ]] && install_module $name;
+        [[ "$DEPOT_TYPE" = "application" ]] && update_application $name;
+        [[ "$DEPOT_TYPE" = "module_geonature" ]] && update_module_geonature $name;
+        [[ "$DEPOT_TYPE" = "module_monitoring" ]] && update_module_monitoring $name;
         _verbose_echo "${green}launch_app - ${nocolor}Fin mise à jour ${DEPOT_TYPE} ${name} ${version_voulue}"
     
     fi
@@ -266,40 +275,87 @@ function install_module_monitoring
 
 }
 
-# Update d'un module TODO
-#
-function update_geonature_module
+function update_module_monitoring
 {
     name=$1
-    echo update geonature_module TODO!!!
+    export build_geonature_frontend=1
 }
 
 
-# UPDATE de la base TODO
+# Update d'un module TODO
+#
+function update_module_geonature
+{
+    name=$1
+    echo update geonature_module TODO!!!
+
+    # bdd
+    update_db $name
+
+    # frontend
+    cd ${script_home_dir}/geonature/frontend
+    package=${script_home_dir}/${name}/frontendpackage.json
+    if [ -f "$package" ]; then
+        npm install --no-save $package
+    fi
+
+    # backend
+    source ${script_home_dir}/geonature/backend/venv/bin/activate
+    requierements=${script_home_dir}/${name}/requierements.txt
+    if [ -f "$requierements" ]; then
+        pip install -r $requierements
+    fi
+
+    export build_geonature_frontend=1
+
+}
+
+
+# Cette function liste et execute les fichiers sql qu'il faut jouer pour passer d'une version à l'autre
+#
+# ARG : $1 : name
 #
 function update_db 
 {
     name=$1
+
+    # récupération de la config du dépot (CONFIG_DIR, UPDATE_DB_DIR, LOG_DIR)
+
+    set_env_depot $name
+
+    # récupération version_installée / version_voulue
+
     version_installed=$(get_version_installed $name)
     version_voulue=$(get_version $name)
 
-    _verbose_echo "Mise à jour BDD $version_installed to $version_voulue"
+    _verbose_echo "Mise à jour BDD $DEPOT_TYPE $name $version_installed to $version_voulue"
 
-    . $script_home_dir/$name/$CONFIG_DIR/settings.ini
-
-    echo migration_db_list_files $version_installed $version_voulue $script_home_dir/$name/$UPDATE_DB_DIR
-    migration_db_list_files $version_installed $version_voulue $script_home_dir/$name/$UPDATE_DB_DIR
+    # fichier log pour la migration
 
     update_db_log=$script_home_dir/$name/$LOG_DIR/migrate_db_${version_installed}to${version_voulue}.log
     rm -f $update_db_log
 
-    for file in $(migration_db_list_files $version_installed $version_voulue $script_home_dir/$name/$UPDATE_DB_DIR)
+    for file in $(migration_db_list_files $name $version_installed $version_voulue)
     do
+        # pour les fichiers nécessaires pour la migration
         echo "$file"
-        export PGPASSWORD=${user_pg_pass}; psql -h ${db_host} -d ${db_name} -U ${user_pg} -p ${db_port} -f $file >> $update_db_log 2>> $update_db_log
+
+        # recupération des paramètres de connexion à la base (depuis GN settings.ini)
+        
+        . $script_home_dir/geonature/config/settings.ini
+        
+        # execution du fichier ????
+        
+        # export PGPASSWORD=${user_pg_pass}; psql -h ${db_host} -d ${db_name} -U ${user_pg} -p ${db_port} -f $file >> $update_db_log 2>> $update_db_log
     done
 
-    cat $update_db_log | grep -i ERR || true
+    err=$(cat $update_db_log | grep -i ERR || true)
+
+    if [ ! -z "$err" ]; then
+        _verbose_echo  "Erreur migration $DEPOT_TYPE $name $version_installed to $version_voulue"
+        _verbose_echo "$err"
+        exit 0
+    fi
 
 }
 
@@ -352,12 +408,10 @@ function update_application
 
     name=$1
 
-    source $script_home_dir/$name/${BACKEND_DIR}/venv/bin/activate 
-
     # db
     update_db $name
 
-    # frontend
+    # frontend - installation des paquets nvm
 
     cd $script_home_dir/$name/${FRONTEND_DIR}    
     export NVM_DIR="$HOME/.nvm"
@@ -372,6 +426,8 @@ function update_application
     fi
 
     # backend
+
+    source $script_home_dir/$name/${BACKEND_DIR}/venv/bin/activate 
 
     cd $script_home_dir/$name/${BACKEND_DIR}
     pip install -r requirements.txt # ?? upgrade ??
@@ -394,7 +450,7 @@ function update_application
 }
 
 
-# Fonction qui permet de stocké le numero de version installé pour une application ou un module
+# Fonction qui permet de stocker le numero de version installé pour une application ou un module
 #
 # elle écrit le numero de version installé dans le fichier
 # $script_home_dir/sysfiles/installed/${name}
@@ -537,57 +593,86 @@ function get_depot_git
 
 
 # liste les fichiers de migrations à jouer entre deux version pour une appli
+#
+# conçu pour les tags et non les branches ..
+#
 # ARGS :    
+#   $1 : name
 #   $1 : version installee
-#   $2 : version objectif
-#   $3 : chemin (absolu) vers le repertoire contenant les fichiers de migration
+#   $2 : version voulue
 # return (echo) : liste des fichiers
+#
 function migration_db_list_files 
 {
-    version_cur=$1
-    version_target=$2
-    migration_data_dir=$3
+    name=$1
+    version_installed=$2
+    version_voulue=$2
+
+    set_env_depot $name
+
+    # répertoire contenant les fichiers de migration
+
+    migration_data_dir=$script_home_dir/$name/$UPDATE_DB_DIR
+
+    # liste des tags
 
     tags=$(git ls-remote --tags 2>/dev/null | awk '{print $2}' | sed -s 's#refs/tags/##' | grep -v 'rc' )
 
-    test_cur=$(echo $tags | grep "$version_cur")
-    test_target=$(echo $tags | grep "$version_target")
+    # test si version installée et version voulue sont bien dans les tags
+    # sinon on sort
 
-    if [ -z "$test_cur" ] ; then
+    test_installed=$(echo $tags | grep "$version_installed")
+    test_voulue=$(echo $tags | grep "$version_voulue")
+
+    if [ -z "$test_installed" ] ; then
         exit 1
-        echo Version cur $version_cur non ok
+        echo Version cur $version_installed non ok
         echo $tags
     fi
 
-    if [ -z "$test_target" ] ; then
+    if [ -z "$test_voulue" ] ; then
         exit 1
-        echo _version target $version_target non ok
+        echo _version target $version_voulue non ok
         echo $tags
     fi
 
-    test_cur=''
-    test_target=''
+    # Boucle sur les tags pour récupérer les fichiers à jouer
+
+    test_installed='' # si on a passé la version installée
+    test_voulue='' # si on a atteind la version voulue
     res=''
 
     for t in $tags
     do
-        if [ "$t" = "$version_cur" ]; then
-            test_cur=1
+
+        if [ "$t" = "$version_installedd" ]; then
+            # si on a passé la version installée
+            test_installed=1
         fi
 
-        if   [ ! -z "$test_cur" ] \
-            && [ -z "$test_target" ] \
+        if   [ ! -z "$test_installed" ] \
             && [ ! -z "$t_prev" ] \
-            && inter="$(ls $migration_data_dir/*${t_prev}to${t}*.sql 2> /dev/null)" \
+            && inter="$(ls $migration_data_dir/*${t_prev}*${t}*.sql 2> /dev/null)" \
             ;  then
+            # si 
+            # - on a passé la tag installé
+            # - on a un précédent (on est)
+            # - on a bien un fichier 
                 echo $inter
         fi  
 
-        if [ "$t" = "$version_target" ]; then
-            test_target=1
+        if [ "$t" = "$version_voulue" ]; then
+            # test si on arrive au tag voulu
+            # arret de la boucle
+            test_voulue=1
+            break
         fi
 
-        if [ ! -z ${test_cur} ]; then
+        if [ ! -z ${test_installed} ]; then
+
+            # si on a passe le tag installé
+            # le tag en cours devient le précdent
+
             t_prev=$t
         fi
     done
