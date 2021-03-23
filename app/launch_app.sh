@@ -95,16 +95,17 @@ fi
 # Pour relancer le build du frontend après l'installation de modules en série
 # Le fait on à chaque redemarrage ?
 
-export build_geonature_frontend=''
+# export build_geonature_frontend=''
 
 for name_version in $(echo ${ALL_DEPOTS}); do
     install_or_update $name_version
 done 
 
-if [ ! -z "$build_geonature_frontend" ]; then
-    source $script_home_dir/geonature/backend/venv/bin/activate
-    geonature_up_config_and_build
-fi
+# if [ ! -z "$build_geonature_frontend" ]; then
+# on le fait à chaque fois ça coute pas plus cher
+source $script_home_dir/geonature/backend/venv/bin/activate
+geonature_up_config_and_build
+# fi
 
 
 # supervisor

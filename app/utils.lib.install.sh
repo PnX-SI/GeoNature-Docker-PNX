@@ -58,16 +58,17 @@ function manage_assets
     # SQLALCHEMY_DATABASE_URI, URL_APPLICATION, etc...
 
     file_config=""
+    file_bootstrap=""
 
     if [ "$name" = "geonature" ]; then    
         file_config=$script_home_dir/$name/$CONFIG_DIR/geonature_config.toml
         file_bootstrap=${bootstrap_dir}/geonature_config.toml
-    elif echo "usershub taxhub" | grep $name; then
+    elif echo "usershub taxhub atlas" | grep $name; then
         file_config=$script_home_dir/$name/$CONFIG_DIR/config.py
         file_bootstrap=${bootstrap_dir}/${name}.config.py
     fi
 
-    if [ ! -z "$file_config"]; then
+    if [ ! -z "$file_config"] && [ -f "$file_bootstrap" ]; then
         cp $file_bootstrap $file_config
         . $script_home_dir/$name/$CONFIG_DIR/settings.ini
         sed -i "s|SQLALCHEMY_DATABASE_URI.*|SQLALCHEMY_DATABASE_URI = 'postgresql://${user_pg}:${user_pg_pass}@${db_host}:${db_port}/${db_name}'|" $file_config
@@ -698,6 +699,12 @@ function install_db {
 
     get_depot_git geonature $(get_version geonature)
     
+    log_file_install_db=$script_home_dir/geonature/var/log/install_db.sh
+
+    # reinit log
+    rm -f $log_file_install_db
+    touch $log_file_install_db
+
     # recupération desettings.ini pour les accès à la base
 
     manage_assets geonature
@@ -756,6 +763,16 @@ psqlg='psql -h ${db_host} -d postgres -U ${user_pg} -p ${db_port}';
     # execution du script et mise à jour de la version de la base (ici geonature) 
 
     chmod +x ./install_db_2.sh
-    . install_db_2.sh && set_version_installed db $(get_version geonature)
+    . install_db_2.sh
+    
+    # verification des erreurs
+    if cat $log_file_install_db | grep ERR; then
+        cat $log_file_install_db | grep ERR
+        _verbose_echo "${green}launch_app - ${nocolor}Erreur dans l'installation de la base de données..."
+        _verbose_echo "${green}launch_app - ${nocolor}Veuillez relancer docker-compose pour finir l'installation si BDD ok"
+        exit 1;
+    fi 
+    # version db geonature only ou pour tous ?????
 
+    set_version_installed db $(get_version geonature)
 }

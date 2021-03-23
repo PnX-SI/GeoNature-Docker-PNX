@@ -11,4 +11,7 @@ TODO
 
 - test erreurs dans install_db
 
+- assets
+ - config.py && geonature_config.toml
+
 tests!!!!

@@ -15,6 +15,17 @@ Ce _portage_ de GeoNature sous Docker a été réalisé par le [BRGM](https://ww
 * [PnX-SI](https://github.com/PnX-SI) / [GeoNature](https://github.com/PnX-SI/GeoNature)
 * [PnX-SI](https://github.com/PnX-SI) / [GeoNature-atlas](https://github.com/PnX-SI/GeoNature-atlas)
 
+### Modules geonature
+
+* [PnX-SI](https://github.com/PnX-SI) / [Import](https://github.com/PnX-SI/gn_module_import)
+* [PnX-SI](https://github.com/PnX-SI) / [Export](https://github.com/PnX-SI/gn_module_export)
+* [PnX-SI](https://github.com/PnX-SI) / [Export](https://github.com/PnX-SI/gn_module_monitoring)
+
+### Sous-modules de suivi (gn_module_monitoring)
+
+Une ribambelles de sous-modules de suivi
+* [PnCevennes](https://github.com/PnCevennes) / [Export](https://github.com/PnCevennes/protocoles_suivi)
+
 ### Autres composants
 
 * [kartoza](https://github.com/kartoza) / [docker-postgis](https://github.com/kartoza/docker-postgis) : Base de données PostgreSQL + PostGIS
@@ -60,7 +71,7 @@ _Dans notre exemple nous utiliserons un certain nombre d'assertions._
 
 #### Dépôt geonature
 
-* Dans le dépôt git, la branche à utiliser est `main`.
+* Dans le dépôt git, la branche à utiliser est `git-maj`.
 * Dans le dépôt git, les sources sont dans le répertoire racine (celui où est situé ce `README.md`).
 
 ### Etapes d'installation
@@ -77,16 +88,16 @@ git clone https://github.com/PnX-SI/GeoNature-docker.git geonature
 
 ### Actuellement le bon contenu est dans la branche "main", il faut donc se mettre dessus (si vous venez de checkout, ce sera le cas directement).
 cd geonature
-git checkout main
+git checkout git-maj
 ```
 
-#### Construire l'image GeoNature (facultatif)
+#### Construire l'image GeoNature (facutatif)
 
 _Cette étape est facultative si l'image peut-être récupérée d'un registre Docker ou bien si le CI/CD du projet est mis en place._
 
 ```bash
 ### Dans le répertoire _app__, il faut adapter le nom du tag
-docker build --force-rm -t geonature:geonature-verified app/
+docker build --force-rm -t geonature:git-maj app/
 ```
 
 #### Créer un répertoire pour le GeoNature que l'on veut déployer, par exemple en spécifiant votre domaine (remplacer `<mondomaine.org>` par le nom de votre choix).
@@ -112,21 +123,26 @@ _Exemple de configuration (dans cet exemple, une image déjà présente est util
 
 ```properties
 POSTGRES_DB=geonature
-POSTGRES_USER=geonature_user
+POSTGRES_USER=geonature
 POSTGRES_PASS=geonature
-PGDATA_DIR=/applications/projets/geonature.brgm-rec.fr/pgdata
-BOOTSTRAP_DIR=/applications/geonature/bootstrap_files
-GEONATURE_COMMON_DIR=/applications/projets/geonature.brgm-rec.fr/geonature_common
-GEONATURE_DOMAIN=geonature.brgm-rec.fr
-GEONATURE_PROTOCOL=https
-GEONATURE_VERSION=<tag geonature > 2.5 ??>
-RESET_ALL=false # !!! efface la base et les applis
-DEBUG=true
-GEONATURE_IMAGE=geonature:geonature-verified # version du geonature docker ??
-NGINX_CONF=/applications/geonature/nginx.conf
-HTTP_PROXY=http://someproxy.loc.al:port
-PGADMIN_DEFAULT_EMAIL=user@domain.geonature_com
-PGADMIN_DEFAULT_PASSWORD=SuperSecret
+PGDATA_DIR=/home/admin_pnc/info/GeoNature-docker/projets/test/pgdata
+BOOTSTRAP_DIR=/home/admin_pnc/info/GeoNature-docker/bootstrap_files
+GEONATURE_COMMON_DIR=/home/admin_pnc/info/GeoNature-docker/projets/test/geonature_common
+GEONATURE_DOMAIN=127.0.0.1  
+GEONATURE_PROTOCOL=http
+GEONATURE_VERSION=2.6.2
+GEONATURE_DOCKER_VERSION=git-maj
+RESET_ALL=false
+DEBUG=false
+SRID_LOCAL=2154 
+GEONATURE_IMAGE=geonature:git-maj
+NGINX_CONF=/home/admin_pnc/info/GeoNature-docker/nginx.conf
+HTTP_PROXY=
+PGADMIN_DEFAULT_EMAIL=a
+PGADMIN_DEFAULT_PASSWORD=a
+APPLICATIONS=geonature-2.6.2 usershub-2.1.3 taxhub-1.7.3 atlas-1.4.2
+MODULES_GEONATURE=import-1.1.2 export-1.2.4 monitoring-0.2.2
+MODULES_MONITORING=cheveches-master oedic-master
 ```
 
 #### Créer le réseau permettant de gérer le _reverse proxy_
@@ -172,6 +188,10 @@ systemctl enable geonature --now
 
 ### Installer un module
 
+- On peut au choix renseigner la ligne MODULES_GEONATURE du fichier .env et relancer docker-compose, 
+- ou bien renseigner la manipulation suivante pour une installation manuelle.
+
+
 L'installation des modules se fait indépendamment dans chacune des instance. Il faut pour cela se connecter terminal du conteneur. Suivez ensuite la démarche habituelle d'installation du module. Ici un exemple avec le module [gn_module_dashboard](https://github.com/PnX-SI/gn_module_dashboard).
 
 ```bash
@@ -203,19 +223,35 @@ Si vous avez besoin de changer l'URL de l'application (changement de DNS, ou bie
 
 Modifiez le `.env` pour mettre à jour l'URL et le protocole. Ce fichier est quand même réutilisé pour créer les `settings.ini` des différentes applications.
 
-#### Configuration UsersHub
+#### Configuration Application
 
-Modifiez le fichier `geonature_common/usershub/config/config.py` en remplaçant la valeur de la variable `URL_APPLICATION`.
+Changer les fichiers présents dans le dossier bootstrap
+- `atlas.settings.py`
+- `geonature.settings.py`
+- `usershub.settings.py`
+- `taxhub.settings.py`
+-
+- `geonature_config.toml`
+- `atlas.config.py`
+- `usershub.config.py`
+- `taxhub.config.py`
 
-#### Configuration TaxHub
+A noter que certains champs sont déduit automatiquement ce qui est renseigné dans les fichiers settings.ini (qui peuvent dépendre du fichier .env en particulier pour les paramètres suivants), par exemple
 
-_Taxhub_ n'utilise que le fichier `settings.ini`.
+- les paramètres de route
+ - `URL_APPLICATION`
+ - `API_ENDPOINT`
+ - `API_TAXHUB`
+ - ...
 
-#### Configuration GeoNature
+- les paramètres de connexion à la base
+ - `SQLALCHEMY_DATABASE_URI`                    
 
-Modifier le fichier `geonature_common/geonature/config/geonature_config.toml` en remplaçant les valeurs pour `URL_APPLICATION`, `API_ENDPOINT` et `API_TAXHUB`.
+relancer docker-compose permettra de prendre en compte la nouvelle configuration 
 
-Ensuite, il faut lancer la mise à jour de la configuration à l'application.
+
+On peu aussi le faire manuellement avec la manipulation qui suit:
+
 
 ```bash
 docker ps
