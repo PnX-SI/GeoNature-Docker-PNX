@@ -130,7 +130,6 @@ BOOTSTRAP_DIR=/home/admin_pnc/info/GeoNature-docker/bootstrap_files
 GEONATURE_COMMON_DIR=/home/admin_pnc/info/GeoNature-docker/projets/test/geonature_common
 GEONATURE_DOMAIN=127.0.0.1  
 GEONATURE_PROTOCOL=http
-GEONATURE_VERSION=2.6.2
 GEONATURE_DOCKER_VERSION=git-maj
 RESET_ALL=false
 DEBUG=false

@@ -17,6 +17,7 @@ if $DEBUG; then
     set -x
 fi
 
+
 # Initialisation
 
 mnt_bootstrap_dir=/mnt_bootstrap_files
@@ -28,8 +29,21 @@ export verbose=1
 . /usr/local/utils.lib.sh
 . /usr/local/utils.lib.install.sh
 
-_verbose_echo "${green}launch_app - ${nocolor}Droits sur le répertoire ${script_home_dir}"
+
+# test
+
+
+
+_verbose_echo "${green}launch_app - ${nocolor}Droits sur le répertoire ${script_home_dir}"t
 sudo chown -R ${geonature_user}. ${script_home_dir}
+
+
+_verbose_echo "${green}launch_app - ${nocolor}Copie des scripts du volume vers ${bootstrap_dir} et droits"
+sudo cp -R ${mnt_bootstrap_dir}/* ${bootstrap_dir}/
+sudo chmod -R a+rx ${bootstrap_dir}
+
+# migration_db_list_files geonature 2.5.5 2.6.2;echo ok;exit 1
+
 
 _verbose_echo "${green}launch_app - ${nocolor}Attente de la base de données..."
 wait_for_restart db:5432
@@ -46,9 +60,12 @@ if $RESET_ALL; then
 
     # effacement des :
 
+    # - log rotate ??? (remanant ???)
+    sudo rm -f /etc/logrotate.d/geonature
+
     # - config supervisor
     rm -f ${script_home_dir}/sysfiles/supervisor/*.conf
-
+    rm -f ${script_home_dir}/sysfiles/supervisor/*.conf
     # version installée
     rm -f /$script_home_dir/sysfiles/installed/*
 
@@ -61,19 +78,13 @@ fi
 
 
 ## Start supervisor
-
 _verbose_echo "${green}launch_app - ${nocolor}Copie de la conf de supervisor (si existe)"
-
 mkdir -p ${script_home_dir}/sysfiles/supervisor
 sudo cp ${script_home_dir}/sysfiles/supervisor/*.conf /etc/supervisor/conf.d/ || true
-
 sudo /usr/bin/supervisord&
 sleep 1
 sudo supervisorctl stop all
 
-_verbose_echo "${green}launch_app - ${nocolor}Copie des scripts du volume vers ${bootstrap_dir} et droits"
-sudo cp -R ${mnt_bootstrap_dir}/* ${bootstrap_dir}/
-sudo chmod -R a+rx ${bootstrap_dir}
 
 
 # BDD
@@ -95,28 +106,31 @@ fi
 # Pour relancer le build du frontend après l'installation de modules en série
 # Le fait on à chaque redemarrage ?
 
-# export build_geonature_frontend=''
+export build_geonature_frontend=''
 
 for name_version in $(echo ${ALL_DEPOTS}); do
     install_or_update $name_version
 done 
 
-# if [ ! -z "$build_geonature_frontend" ]; then
+build_geonature_frontend=1
+if [ ! -z "$build_geonature_frontend" ]; then
 # on le fait à chaque fois ça coute pas plus cher
 source $script_home_dir/geonature/backend/venv/bin/activate
 geonature_up_config_and_build
-# fi
+fi
 
 
 # supervisor
 
-# save supervisor files & stop
-sudo cp /etc/supervisor/conf.d/* ${script_home_dir}/sysfiles/supervisor/
+# save supervisor files to sysfiles
+
+# reread, reload ??
 sudo supervisorctl reread
 sudo supervisorctl reload
+
+# stop 
 sudo supervisorctl stop all
 sudo supervisorctl shutdown
-
 
 
 if [[ ! -z $1 ]]; then

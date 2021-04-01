@@ -41,6 +41,7 @@ function set_env_depot
 
 function manage_assets 
 {
+    set -e 
     name=$1
 
     # on récupère CONFIG_DIR
@@ -68,7 +69,7 @@ function manage_assets
         file_bootstrap=${bootstrap_dir}/${name}.config.py
     fi
 
-    if [ ! -z "$file_config"] && [ -f "$file_bootstrap" ]; then
+    if [ ! -z "$file_config" ] && [ -f "$file_bootstrap" ]; then
         cp $file_bootstrap $file_config
         . $script_home_dir/$name/$CONFIG_DIR/settings.ini
         sed -i "s|SQLALCHEMY_DATABASE_URI.*|SQLALCHEMY_DATABASE_URI = 'postgresql://${user_pg}:${user_pg_pass}@${db_host}:${db_port}/${db_name}'|" $file_config
@@ -146,11 +147,11 @@ function install_or_update
         # version_installée != version_voulue
         # on procède à la mise à jour (TODO)
 
-        _verbose_echo "${green}launch_app - ${nocolor}Mise à jour ${DEPOT_TYPE} ${name} ${version_voulue}"
+        _verbose_echo "${green}launch_app - ${nocolor}Mise à jour ${DEPOT_TYPE} ${name} ${version_installed} -> ${version_voulue}"
         [[ "$DEPOT_TYPE" = "application" ]] && update_application $name;
         [[ "$DEPOT_TYPE" = "module_geonature" ]] && update_module_geonature $name;
         [[ "$DEPOT_TYPE" = "module_monitoring" ]] && update_module_monitoring $name;
-        _verbose_echo "${green}launch_app - ${nocolor}Fin mise à jour ${DEPOT_TYPE} ${name} ${version_voulue}"
+        _verbose_echo "${green}launch_app - ${nocolor}Fin mise à jour ${DEPOT_TYPE} ${name} ${version_installed} -> ${version_voulue}"
     
     fi
 
@@ -159,6 +160,7 @@ function install_or_update
 
     set_version_installed $name $version_voulue    
 }
+
 
 # fonction qui procède à l'installation d'une applicatipon
 #
@@ -171,7 +173,7 @@ function install_or_update
 # ARGS
 #   $1 : name : nom de l'application
 #
-function install_application 
+function install_application
 {
     name=$1
 
@@ -208,10 +210,10 @@ function install_application
     sed -i 's|mkdir "src/external_assets"|mkdir -p "src/external_assets"|' ./install_app2.sh 
     sed -i '/.*install_gn_module.*/ s/$/ || true/' ./install_app2.sh 
     sed -i 's/npm run build/#npm run build/' ./install_app2.sh
-    
+    sed -i 's/npm ci --only=prod/npm ci --only=prod; npm install protractor;/' ./install_app2.sh
+
     # USERSHUB
     sed -i '/sudo a2enmod/d'  ./install_app2.sh
- 
     # USERHUB/TAXHUB
     sed -i '/sudo -s supervisorctl/d'  ./install_app2.sh
 
@@ -224,6 +226,10 @@ function install_application
     ./install_app2.sh
 
     rm ./install_app2.sh
+
+    # sauvegarde de supervisord
+    sudo cp /etc/supervisor/conf.d/* ${script_home_dir}/sysfiles/supervisor/
+
 
 }
 
@@ -262,12 +268,14 @@ function install_module_monitoring
 {
     name=$1
  
-    # Activation du Virtualenv
-
+    # Activation du Virtualenv (pour etre sur que la commande flask monitorings soit prise en compte)
+    source $script_home_dir/geonature/backend/venv/bin/activate
+    deactivate
     source $script_home_dir/geonature/backend/venv/bin/activate
 
     # Installation du sous module
-
+    cd $script_home_dir/geonature/backend
+    flask
     flask monitorings install $script_home_dir/$name/$DIR_SOUS_MODULE $name --build=false
  
     # pour executer le build du frontend de geonature apres l'installation des modules
@@ -291,7 +299,7 @@ function update_module_geonature
     echo update geonature_module TODO!!!
 
     # bdd
-    update_db $name
+    update_db $name       
 
     # frontend
     cd ${script_home_dir}/geonature/frontend
@@ -334,7 +342,10 @@ function update_db
     # fichier log pour la migration
 
     update_db_log=$script_home_dir/$name/$LOG_DIR/migrate_db_${version_installed}to${version_voulue}.log
-    rm -f $update_db_log
+
+    echo "Migration BDD pour ${DEPOT_TYPE} ${name} ${version_installee} -> ${version_voulue}" > $update_db_log
+        
+    . $script_home_dir/geonature/config/settings.ini
 
     for file in $(migration_db_list_files $name $version_installed $version_voulue)
     do
@@ -343,11 +354,10 @@ function update_db
 
         # recupération des paramètres de connexion à la base (depuis GN settings.ini)
         
-        . $script_home_dir/geonature/config/settings.ini
         
         # execution du fichier ????
         
-        # export PGPASSWORD=${user_pg_pass}; psql -h ${db_host} -d ${db_name} -U ${user_pg} -p ${db_port} -f $file >> $update_db_log 2>> $update_db_log
+        export PGPASSWORD=${user_pg_pass}; psql -h ${db_host} -d ${db_name} -U ${user_pg} -p ${db_port} -f $file >> $update_db_log 2>> $update_db_log
     done
 
     err=$(cat $update_db_log | grep -i ERR || true)
@@ -376,17 +386,11 @@ function geonature_up_config_and_build
         geonature generate_frontend_tsconfig_app
         geonature generate_frontend_tsconfig
 
+
         # configuration des modules
-        for D in $(find ../external_modules  -type l | xargs readlink) ; do
+        for module in  $(ls $script_home_dir/geonature/external_modules) ; do
             # si le lien symbolique exsite
-            if [ -e "$D" ] ; then
-                cd ${D}
-                cd backend   
-                if [ -f 'requirements.txt' ]
-                then
-                    geonature update_module_configuration ${D} --build=false  --prod=false
-                fi
-            fi
+                    geonature update_module_configuration ${module} --build=false  --prod=false
         done
 
         # rebuild du frontend
@@ -405,12 +409,10 @@ function geonature_up_config_and_build
 #
 function update_application
 {
-    _verbose_echo "${green}launch_app - ${nocolor}Mise à jour ${DEPOT_TYPE} ${application} ${version_installed} -> ${version_voulue}"
-
     name=$1
 
-    # db
-    update_db $name
+    # db    
+    # update_db $name
 
     # frontend - installation des paquets nvm
 
@@ -447,7 +449,6 @@ function update_application
         done
     fi
 
-    _verbose_echo "${green}launch_app - ${nocolor}Fin de la mise à jour de l'application ${application} ${version_installed} -> ${version_voulue}"    
 }
 
 
@@ -607,7 +608,7 @@ function migration_db_list_files
 {
     name=$1
     version_installed=$2
-    version_voulue=$2
+    version_voulue=$3
 
     set_env_depot $name
 
@@ -616,7 +617,7 @@ function migration_db_list_files
     migration_data_dir=$script_home_dir/$name/$UPDATE_DB_DIR
 
     # liste des tags
-
+    cd $script_home_dir/$name
     tags=$(git ls-remote --tags 2>/dev/null | awk '{print $2}' | sed -s 's#refs/tags/##' | grep -v 'rc' )
 
     # test si version installée et version voulue sont bien dans les tags
@@ -646,7 +647,7 @@ function migration_db_list_files
     for t in $tags
     do
 
-        if [ "$t" = "$version_installedd" ]; then
+        if [ "$t" = "$version_installed" ]; then
             # si on a passé la version installée
             test_installed=1
         fi
@@ -699,13 +700,14 @@ function install_db {
 
     get_depot_git geonature $(get_version geonature)
     
-    log_file_install_db=$script_home_dir/geonature/var/log/install_db.sh
+    log_file_install_db=$script_home_dir/geonature/var/log/install_db.log
 
     # reinit log
     rm -f $log_file_install_db
+    mkdir -p $script_home_dir/geonature/var/log
     touch $log_file_install_db
 
-    # recupération desettings.ini pour les accès à la base
+    # recupération de settings.ini pour les accès à la base
 
     manage_assets geonature
     . $script_home_dir/geonature/config/settings.ini
@@ -770,7 +772,7 @@ psqlg='psql -h ${db_host} -d postgres -U ${user_pg} -p ${db_port}';
         cat $log_file_install_db | grep ERR
         _verbose_echo "${green}launch_app - ${nocolor}Erreur dans l'installation de la base de données..."
         _verbose_echo "${green}launch_app - ${nocolor}Veuillez relancer docker-compose pour finir l'installation si BDD ok"
-        exit 1;
+        # exit 1; 
     fi 
     # version db geonature only ou pour tous ?????
 
