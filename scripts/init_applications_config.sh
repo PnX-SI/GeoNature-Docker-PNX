@@ -1,0 +1,9 @@
+#!/bin/bash
+source $1
+touch ${GEONATURE_VOLUME_CONFIG_DIRECTORY}/geonature_config.toml
+touch ${TAXHUB_VOLUME_CONFIG_DIRECTORY}/config.py
+touch ${USERSHUB_VOLUME_CONFIG_DIRECTORY}/config.py
+touch ${ATLAS_VOLUME_CONFIG_DIRECTORY}/config.py
+
+mkdir -p ${PGADMIN_VOLUME_DATA_DIRECTORY}
+sudo chown -R 5050:5050 ${PGADMIN_VOLUME_DATA_DIRECTORY}

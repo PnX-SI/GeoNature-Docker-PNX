@@ -1,0 +1,28 @@
+log:
+  level: DEBUG
+  format: common
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    watch: true
+    exposedByDefault: false
+    swarmMode: false
+    constraints: Label(`traefik.constraint-label`, `gds`)
+  file:
+    filename: /dynamic.yaml
+
+api:
+  dashboard: true
+  debug: false
+  insecure: true
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      tls: false
+  websecure:
+    address: ":443"
+    http:
+      tls: false

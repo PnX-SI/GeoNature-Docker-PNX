@@ -1,0 +1,31 @@
+.env
+*.save
+
+# data/services/ pour
+# les config
+# les repertoires custom et statics
+data/services/traefik/certs/*
+data/services/postgres/backup/*
+data/services/geonature/config/*
+data/services/geonature/custom/*
+data/services/geonature/data/*
+data/services/geonature/media/*/*
+data/services/taxhub/static/*
+data/services/taxhub/config/*
+data/services/taxhub/media/*
+data/services/usershub/config/*
+data/services/atlas/custom/*
+data/services/atlas/config/*
+
+# data/storage/ pour
+# les données bdd postgres
+# les données pgadmin
+data/storage/postgres
+data/storage/pgadmin/*
+data/storage/redis
+
+projects/*
+
+!**/.gitkeep
+docker-compose.override.yml
+
