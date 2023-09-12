@@ -1,0 +1,52 @@
+version: '3.7'
+
+networks:
+  rpx_net:
+    name: rpx_net
+    driver: bridge
+  # Déclaration des réseaux externes de chaque instance Geonature
+  traefik_gn_1:
+    external: true
+    name: ${NETWORK_TRAEFIK_GN_1}
+  traefik_gn_2:
+    external: true
+    name: ${NETWORK_TRAEFIK_GN_2}
+
+services:
+  rproxy:
+    image: traefik:v2.10.4
+    container_name: rproxy
+    networks:
+      - rpx_net
+      # Connexion aux réseaux externes des instances Geonature
+      - ${NETWORK_TRAEFIK_GN_1}
+      - ${NETWORK_TRAEFIK_GN_2}
+    ports:
+      - "80:80"
+      - "8080:8080"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${TRAEFIK_CONFIG_PATH}:/traefik.yaml
+      - ${TRAEFIK_DYNAMIC_CONFIG_PATH}:/dynamic.yaml
+      - ${TRAEFIK_LETSENCRIPT_PATH}:/letsencrypt
+    environment:
+      - HTTP_PROXY=${HTTP_PROXY}
+      - HTTPS_PROXY=${HTTP_PROXY}
+      - NO_PROXY=${NO_PROXY}
+    labels:
+      - "traefik.enable=true"
+      # Autoriser les réseaux 193.56.4.0/24 (Renater.4), 192.168.220.0/22 (VPN SSL Fortinet), 192.168.216.0/22 (VPN IPSEC Fortinet), 172.17.0.0/23 (DSI 802.1X)
+#      - "traefik.http.middlewares.brgm-ipwhitelist.ipwhitelist.sourcerange=193.56.4.0/24, 192.168.220.0/22, 192.168.216.0/22, 172.17.0.0/23"
+      - "traefik.http.routers.traefik-http.rule=Host(`${HOST}`)"
+      - "traefik.http.routers.traefik-http.entrypoints=web"
+      - "traefik.http.routers.traefik-http.service=api@internal"
+#      - "traefik.http.routers.traefik-http.middlewares=brgm-ipwhitelist@docker, https-redirectscheme@file"
+      - "traefik.http.routers.traefik-http.middlewares=https-redirectscheme@file"
+      - "traefik.http.routers.traefik-https.rule=Host(`${HOST}`)"
+      - "traefik.http.routers.traefik-https.entrypoints=websecure"
+      - "traefik.http.routers.traefik-https.service=api@internal"
+#      - "traefik.http.routers.traefik-https.middlewares=brgm-ipwhitelist@docker"
+      - "traefik.http.routers.traefik-https.tls=true"
+      - "traefik.http.routers.traefik-https.tls.certresolver=letsencrypt"
+
