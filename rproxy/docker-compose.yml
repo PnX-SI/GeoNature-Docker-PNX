@@ -19,8 +19,8 @@ services:
     networks:
       - rpx_net
       # Connexion aux réseaux externes des instances Geonature
-      - ${NETWORK_TRAEFIK_GN_1}
-      - ${NETWORK_TRAEFIK_GN_2}
+      - traefik_gn_1
+      - traefik_gn_2
     ports:
       - "80:80"
       - "8080:8080"

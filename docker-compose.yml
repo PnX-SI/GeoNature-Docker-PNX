@@ -1,13 +1,14 @@
 version: "3.9"
 
-x-user-defaults: &user-defaults
+x-defaults: &defaults
   user: ${DOCKER_UID}:${DOCKER_GID}
+  environment:
+    - http_proxy=${HTTP_PROXY:-}
+    - https_proxy=${HTTPS_PROXY:-}
 
 x-geonature-backend-defaults: &geonature-backend-defaults
-  <<: *user-defaults
+  <<: *defaults
   environment:
-    - http_proxy=${HTTP_PROXY}
-    - https_proxy=${HTTPS_PROXY}
     - GEONATURE_SQLALCHEMY_DATABASE_URI=${GEONATURE_SQLALCHEMY_DATABASE_URI}
     - GEONATURE_URL_APPLICATION=${GEONATURE_URL_APPLICATION}
     - GEONATURE_API_ENDPOINT=${GEONATURE_API_ENDPOINT}
@@ -51,6 +52,11 @@ services:
     logging:
       options:
         tag: ${REDIS_CONTAINER_NAME}
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   postgres:
     networks:
@@ -73,11 +79,10 @@ services:
       - ${POSTGRES_VOLUME_BACKUP_DIRECTORY}:/backup
       - ${POSTGRES_VOLUME_SCRIPTS_DIRECTORY}:/scripts
     healthcheck:
-      test: [CMD-SHELL, "/scripts/docker_healthcheck.sh"]
-      interval: 5s
-      timeout: 10s
-      retries: 10
-      start_period: 0s
+      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB}", "-U", "${POSTGRES_USER}", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     logging:
       options:
         tag: ${POSTGRES_CONTAINER_NAME}
@@ -107,13 +112,12 @@ services:
       - "traefik.http.routers.${PGADMIN_CONTAINER_NAME}-https.tls=${TRAEFIK_TLS}"
       - "traefik.http.routers.${PGADMIN_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
-
     logging:
       options:
         tag: ${PGADMIN_CONTAINER_NAME}
 
   usershub:
-    <<: *user-defaults
+    <<: *defaults
     networks:
       - default
       - traefik
@@ -125,8 +129,6 @@ services:
     volumes:
       - ${USERSHUB_VOLUME_CONFIG_DIRECTORY}:/dist/config/
     environment:
-      - http_proxy=${HTTP_PROXY}
-      - https_proxy=${HTTPS_PROXY}
       - USERSHUB_URL_APPLICATION=${USERSHUB_URL_APPLICATION}
       - USERSHUB_APPLICATION_ROOT=${USERSHUB_PREFIX}
       - USERSHUB_SQLALCHEMY_DATABASE_URI=${USERSHUB_SQLALCHEMY_DATABASE_URI}
@@ -145,19 +147,17 @@ services:
       - "traefik.http.routers.${USERSHUB_CONTAINER_NAME}-https.tls=${TRAEFIK_TLS}"
       - "traefik.http.routers.${USERSHUB_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
-
     healthcheck:
-      test: ["CMD", "./docker_healthcheck.sh"]
+      test: ["CMD", "curl", "--no-proxy", "localhost", "http://localhost:5001${USERSHUB_APPLICATION_ROOT}/login"]
       interval: 5s
       timeout: 10s
       retries: 10
-      start_period: 5s
     logging:
       options:
         tag: ${USERSHUB_CONTAINER_NAME}
 
   taxhub:
-    <<: *user-defaults
+    <<: *defaults
     networks:
       - default
       - traefik
@@ -170,8 +170,6 @@ services:
       - ${TAXHUB_VOLUME_CONFIG_DIRECTORY}:/dist/config
       - ${TAXHUB_VOLUME_MEDIA_DIRECTORY}:/dist/static/medias
     environment:
-      - http_proxy=${HTTP_PROXY}
-      - https_proxy=${HTTPS_PROXY}
       - TAXHUB_APPLICATION_ROOT=${TAXHUB_PREFIX}
       - TAXHUB_SQLALCHEMY_DATABASE_URI=${TAXHUB_SQLALCHEMY_DATABASE_URI}
       - TAXHUB_SECRET_KEY=${TAXHUB_SECRET_KEY}
@@ -187,7 +185,7 @@ services:
       - "traefik.http.routers.${TAXHUB_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
     healthcheck:
-      test: ["CMD", "./docker_healthcheck.sh"]
+      test: ["CMD", "curl", "--no-proxy", "localhost", "http://localhost:5000${TAXHUB_APPLICATION_ROOT}/"]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -210,8 +208,6 @@ services:
     volumes:
       - ${GEONATURE_VOLUME_CONFIG_DIRECTORY}:/dist/config/
       - ${GEONATURE_VOLUME_MEDIA_DIRECTORY}:/dist/media
-
-    # command: celery -A geonature.celery_app:app worker
     command: watchmedo auto-restart -d /dist/config/ -p geonature_config.toml -- celery -A geonature.celery_app:app worker
     logging:
       options:
@@ -236,7 +232,7 @@ services:
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
     healthcheck:
-      test: ["CMD", "/docker_healthcheck.sh"]
+      test: ["CMD", "curl", "--no-proxy", "localhost", "http://localhost:80${NGINX_LOCATION}/"]
       interval: 1s
       timeout: 10s
       retries: 10
@@ -273,7 +269,7 @@ services:
       - "traefik.http.routers.${GEONATURE_BACKEND_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
     healthcheck:
-      test: ["CMD", "/docker_healthcheck.sh"]
+      test: ["CMD", "curl", "--no-proxy", "localhost", "http://localhost:8000${GEONATURE_BACKEND_PREFIX}/gn_commons/config"]
       interval: ${GEONATURE_BACKEND_HEALTHCHECK_INTERVAL}
       timeout: 10s
       retries: 30
@@ -283,7 +279,7 @@ services:
         tag: ${GEONATURE_BACKEND_CONTAINER_NAME}
 
   atlas:
-    <<: *user-defaults
+    <<: *defaults
     networks:
       - default
       - traefik
@@ -293,8 +289,6 @@ services:
     image: ${ATLAS_IMAGE}
     container_name: ${ATLAS_CONTAINER_NAME}
     environment:
-      - http_proxy=${HTTP_PROXY}
-      - https_proxy=${HTTPS_PROXY}
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -327,7 +321,7 @@ services:
       - "traefik.http.routers.${ATLAS_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
     healthcheck:
-      test: ["CMD", "./docker_healthcheck.sh"]
+      test: ["CMD", "curl", "--no-proxy", "localhost", "http://localhost:8080${ATLAS_APPLICATION_ROOT}/"]
       interval: ${ATLAS_HEALTHCHECK_INTERVAL}
       timeout: 10s
       retries: 20
