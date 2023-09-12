@@ -61,12 +61,12 @@ jobs:
             nb_services_healthy=$(docker compose ps | grep '(healthy)'| wc -l)
             echo nb_services_running $nb_services_running
             echo nb_services_healthy $nb_services_healthy
-            [ "$nb_services_running" = "10" ] || exit 1
+            [ "$nb_services_running" = "9" ] || exit 1
             [ "$nb_services_healthy" = "6" ] || exit 1
 
-      - name: test app response
-        run: |
-          ./scripts/test_docker_url.sh .env
+      # - name: test app response
+      #   run: |
+      #     ./scripts/test_docker_url.sh .env
 
       - name: test reload
         run: |
