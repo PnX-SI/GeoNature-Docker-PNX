@@ -2,9 +2,9 @@
 	path = sources/GeoNature
 	url = https://github.com/PnX-SI/GeoNature.git
 	branch = feat/docker2
-[submodule "sources/Usershub"]
-	path = sources/Usershub
-	url = https://github.com/PnX-SI/Usershub.git
+[submodule "sources/UsersHub"]
+	path = sources/UsersHub
+	url = https://github.com/PnX-SI/UsersHub.git
 [submodule "sources/TaxHub"]
 	path = sources/TaxHub
 	url = https://github.com/PnX-SI/TaxHub.git
