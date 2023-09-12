@@ -35,6 +35,12 @@ jobs:
         run: |
           ./scripts/build_geonature_all.sh .env
 
+
+      - name: Networks
+        run: |
+          eval $(grep TRAEFIK_NETWORK_NAME .env.prod.example)
+          docker network create $TRAEFIK_NETWORK_NAME
+
       - name: Lauch docker compose
         run: |
           docker compose up -d
