@@ -26,7 +26,8 @@ jobs:
 
       - name: copy cur environment
         run: |
-          ./scripts/init_env_file.sh .env.exemple settings.ini.test .env
+          ./scripts/init_env_file.sh .env.example settings.ini.test .env
+
       - name: Copy config samples
         run: |
           ./scripts/init_applications_config.sh .env
