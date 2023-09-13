@@ -44,6 +44,9 @@ ${project_path}/script/init_env_file.sh .env.exemple settings.ini .env
 
 # rappatrier les fichiers dans data
 
+# bdd (voir autre doc)
+
+
 # mettre en place les crons
 cron_script=${projects_directory}/nigth_cron.sh # à adapter si besoin de day_cron
 touch $cron_script
