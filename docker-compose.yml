@@ -185,7 +185,7 @@ services:
       - "traefik.http.routers.${TAXHUB_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
     healthcheck:
-      test: ["CMD", "curl", "--no-proxy", "localhost", 'http://localhost:5000${TAXHUB_APPLICATION_ROOT}/']
+      test: ["CMD", "curl", "--no-proxy", "localhost", "http://localhost:5000${TAXHUB_APPLICATION_ROOT}/"]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -233,7 +233,7 @@ services:
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
     healthcheck:
-      test: ["CMD", "curl", "--no-proxy", "localhost", 'http://localhost:80${GEONATURE_FRONTEND_PREFIX}/']
+      test: ["CMD", "curl", "--no-proxy", "localhost", "http://localhost:80${GEONATURE_FRONTEND_PREFIX}/"]
       interval: 1s
       timeout: 10s
       retries: 10
@@ -262,7 +262,7 @@ services:
       - "--access-logfile=-"
       - "--bind=0.0.0.0:8000"
       - "--reload"
-      - '--reload-extra-file=${GEONATURE_CONFIG_FILE}'
+      - "--reload-extra-file=${GEONATURE_CONFIG_FILE}"
     image: ${GEONATURE_BACKEND_IMAGE}
     container_name: ${GEONATURE_BACKEND_CONTAINER_NAME}
     volumes:
@@ -281,7 +281,7 @@ services:
       - "traefik.http.routers.${GEONATURE_BACKEND_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
     healthcheck:
-      test: ["CMD", "curl", "--no-proxy", "localhost", 'http://localhost:8000${GEONATURE_BACKEND_PREFIX}/gn_commons/config']
+      test: ["CMD", "curl", "--no-proxy", "localhost", "http://localhost:8000${GEONATURE_BACKEND_PREFIX}/gn_commons/config"]
       interval: ${GEONATURE_BACKEND_HEALTHCHECK_INTERVAL}
       timeout: 10s
       retries: 30
@@ -333,7 +333,7 @@ services:
       - "traefik.http.routers.${ATLAS_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
     healthcheck:
-      test: ["CMD", "curl", "--no-proxy", "localhost", 'http://localhost:8080${ATLAS_APPLICATION_ROOT}/']
+      test: ["CMD", "curl", "--no-proxy", "localhost", "http://localhost:8080${ATLAS_APPLICATION_ROOT}/"]
       interval: ${ATLAS_HEALTHCHECK_INTERVAL}
       timeout: 10s
       retries: 20
