@@ -25,8 +25,8 @@ jobs:
           submodules: True
 
       - name: copy cur environment
-        run: cp .env.dev.example .env
-
+        run: |
+          ./scripts/init_env_file.sh .env.exemple settings.ini.test .env
       - name: Copy config samples
         run: |
           ./scripts/init_applications_config.sh .env

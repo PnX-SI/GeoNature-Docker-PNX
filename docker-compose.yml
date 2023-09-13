@@ -18,7 +18,7 @@ x-geonature-backend-defaults: &geonature-backend-defaults
     - GEONATURE_CELERY__broker_url=${GEONATURE_CELERY__broker_url}
     - GEONATURE_CELERY__result_backend=${GEONATURE_CELERY__result_backend}
     - GEONATURE_SECRET_KEY=${GEONATURE_SECRET_KEY}
-    - GEONATURE_POPULATE_DB=${GEONATURE_POPULATE_DB}
+    - GEONATURE_SKIP_POPULATE_DB=${GEONATURE_SKIP_POPULATE_DB}
     - srid_local=${GEONATURE_SRID_LOCAL}
     - add_sample_data=${GEONATURE_ADD_SAMPLE_DATA}
     - install_bdc_statuts=${GEONATURE_INSTALL_BDC_STATUTS}
@@ -208,7 +208,8 @@ services:
     volumes:
       - ${GEONATURE_VOLUME_CONFIG_DIRECTORY}:/dist/config/
       - ${GEONATURE_VOLUME_MEDIA_DIRECTORY}:/dist/media
-    command: watchmedo auto-restart -d /dist/config/ -p geonature_config.toml -- celery -A geonature.celery_app:app worker
+    entrypoint: []
+    command: pip install watchdog && watchmedo auto-restart -d /dist/config/ -p geonature_config.toml -- celery -A geonature.celery_app:app worker
     logging:
       options:
         tag: ${GEONATURE_WORKER_CONTAINER_NAME}
@@ -251,6 +252,17 @@ services:
         condition: service_started
       postgres:
         condition: service_healthy
+    entrypoint: []
+    command:
+      - "gunicorn"
+      - "geonature:create_app()"
+      - "--name=geonature"
+      - "--workers=2"
+      - "--threads=2"
+      - "--access-logfile=-"
+      - "--bind=0.0.0.0:8000"
+      - "--reload"
+      - '--reload-extra-file=${GEONATURE_CONFIG_FILE}'
     image: ${GEONATURE_BACKEND_IMAGE}
     container_name: ${GEONATURE_BACKEND_CONTAINER_NAME}
     volumes:

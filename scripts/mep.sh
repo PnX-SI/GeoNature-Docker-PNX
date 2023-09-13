@@ -17,9 +17,11 @@ cp -r ${project_path}/rproxy ${projects_directory}/rproxy
 # ln pour dev ?
 # ln -s ${project_path}/rproxy ${projects_directory}/rproxy
 
-# copie env proxy
-cp ${projects_directory}/rproxy/.env.exemple ${projects_directory}/rproxy/.env
-# editer HOST, NETWORK_TRAEFIK_GN_1, NETWORK_TRAEFIK_GN_2, HTTP_PROXY, etc ....
+#
+cd ${projects_directory}/rproxy
+# creer unfichier settings.ini
+# avec HOST, NETWORK_TRAEFIK_GN_1, NETWORK_TRAEFIK_GN_2, HTTP_PROXY, etc ....
+${project_path}/script/init_env_file.sh .env.exemple pag_dev.ini .env
 
 # creer les reseaux
 eval $(grep NETWORK_TRAEFIK_GN_1 ${projects_directory}/rproxy/.env)
@@ -34,13 +36,11 @@ docker compose up -d
 
 # instance
 cd $project_path
-cp .env.prod.example .env
-
-# modifier
+# créer un fichier settings.ini avec
 # DOMAIN PROJECT_NAME PGADMIN_DEFAULT_EMAIL PGADMIN_DEFAULT_PASSWORD
 # HTTP_PROXY HTTPS_PROXY
 # SECRET_KEY ??
-nano .env
+${project_path}/script/init_env_file.sh .env.exemple settings.ini .env
 
 # rappatrier les fichiers dans data
 
@@ -50,3 +50,5 @@ touch $cron_script
 chmod 775 $cron_script
 echo "${project_path}/scripts/cron.sh" >> $cron_script
 (crontab -l 2>/dev/null; echo "* 0 * * * ${scron_script}") | crontab -
+
+# ftp

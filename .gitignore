@@ -26,6 +26,8 @@ data/storage/redis
 
 projects/*
 
+*.ini
+
 !**/.gitkeep
 docker-compose.override.yml
 
