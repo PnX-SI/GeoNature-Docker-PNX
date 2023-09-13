@@ -148,7 +148,7 @@ services:
       - "traefik.http.routers.${USERSHUB_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
     healthcheck:
-      test: ["CMD", "curl", "--no-proxy", "localhost", 'http://localhost:5001${USERSHUB_APPLICATION_ROOT}/login']
+      test: ["CMD", "curl", "--no-proxy", "localhost", "http://localhost:5001${USERSHUB_PREFIX}/login"]
       interval: 5s
       timeout: 10s
       retries: 10
@@ -233,7 +233,7 @@ services:
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
     healthcheck:
-      test: ["CMD", "curl", "--no-proxy", "localhost", 'http://localhost:80${NGINX_LOCATION}/']
+      test: ["CMD", "curl", "--no-proxy", "localhost", 'http://localhost:80${GEONATURE_FRONTEND_PREFIX}/']
       interval: 1s
       timeout: 10s
       retries: 10
