@@ -24,6 +24,7 @@ cp ${projects_directory}/rproxy/.env.exemple ${projects_directory}/rproxy/.env
 # creer les reseaux
 eval $(grep NETWORK_TRAEFIK_GN_1 ${projects_directory}/rproxy/.env)
 eval $(grep NETWORK_TRAEFIK_GN_2 ${projects_directory}/rproxy/.env)
+docker network create rpx_net
 docker network create $NETWORK_TRAEFIK_GN_1
 docker network create $NETWORK_TRAEFIK_GN_2
 

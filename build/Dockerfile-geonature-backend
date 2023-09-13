@@ -1,6 +1,6 @@
 ARG GEONATURE_BACKEND_IMAGE
 
-FROM python:3.10-bullseye AS build
+FROM python:3.11-bookworm AS build
 
 ENV PIP_ROOT_USER_ACTION=ignore
 RUN --mount=type=cache,target=/root/.cache \
