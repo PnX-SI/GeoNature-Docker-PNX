@@ -148,7 +148,7 @@ services:
       - "traefik.http.routers.${USERSHUB_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
     healthcheck:
-      test: ["CMD", "curl", "--no-proxy", "localhost", "http://localhost:5001${USERSHUB_APPLICATION_ROOT}/login"]
+      test: ["CMD", "curl", "--no-proxy", "localhost", 'http://localhost:5001${USERSHUB_APPLICATION_ROOT}/login']
       interval: 5s
       timeout: 10s
       retries: 10
@@ -185,7 +185,7 @@ services:
       - "traefik.http.routers.${TAXHUB_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
     healthcheck:
-      test: ["CMD", "curl", "--no-proxy", "localhost", "http://localhost:5000${TAXHUB_APPLICATION_ROOT}/"]
+      test: ["CMD", "curl", "--no-proxy", "localhost", 'http://localhost:5000${TAXHUB_APPLICATION_ROOT}/']
       interval: 10s
       timeout: 10s
       retries: 10
@@ -232,7 +232,7 @@ services:
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
     healthcheck:
-      test: ["CMD", "curl", "--no-proxy", "localhost", "http://localhost:80${NGINX_LOCATION}/"]
+      test: ["CMD", "curl", "--no-proxy", "localhost", 'http://localhost:80${NGINX_LOCATION}/']
       interval: 1s
       timeout: 10s
       retries: 10
@@ -269,7 +269,7 @@ services:
       - "traefik.http.routers.${GEONATURE_BACKEND_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
     healthcheck:
-      test: ["CMD", "curl", "--no-proxy", "localhost", "http://localhost:8000${GEONATURE_BACKEND_PREFIX}/gn_commons/config"]
+      test: ["CMD", "curl", "--no-proxy", "localhost", 'http://localhost:8000${GEONATURE_BACKEND_PREFIX}/gn_commons/config']
       interval: ${GEONATURE_BACKEND_HEALTHCHECK_INTERVAL}
       timeout: 10s
       retries: 30
@@ -321,7 +321,7 @@ services:
       - "traefik.http.routers.${ATLAS_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
     healthcheck:
-      test: ["CMD", "curl", "--no-proxy", "localhost", "http://localhost:8080${ATLAS_APPLICATION_ROOT}/"]
+      test: ["CMD", "curl", "--no-proxy", "localhost", 'http://localhost:8080${ATLAS_APPLICATION_ROOT}/']
       interval: ${ATLAS_HEALTHCHECK_INTERVAL}
       timeout: 10s
       retries: 20
