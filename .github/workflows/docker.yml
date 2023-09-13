@@ -39,8 +39,7 @@ jobs:
 
       - name: Networks
         run: |
-          eval $(grep TRAEFIK_NETWORK_NAME .env)
-          docker network create $TRAEFIK_NETWORK_NAME
+          docker network create traefik_gds
 
       - name: Lauch docker compose
         run: |

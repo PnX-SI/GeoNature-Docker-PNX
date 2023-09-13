@@ -5,11 +5,14 @@ template_file=$1
 settings_file=$2
 output_file=$3
 
+sep="&" # separator for sed
+
 cp $template_file $output_file
 
-for line in $(cat $settings_file); do
+while IFS= read -r line; do
     # skip comment
     [[ $line =~ ^#.* ]] && continue
     var_name=${line%%=*}
-    sed -i "s/${var_name}=.*/$line/" $output_file
-done
+    sed -i "s${sep}${var_name}=.*${sep}${line}${sep}" $output_file
+    grep "${var_name}=" ${output_file}
+done < ${settings_file}
