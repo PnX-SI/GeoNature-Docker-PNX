@@ -19,7 +19,7 @@ echo $log_line_start >> $log_file_global
 
 # - 2 )creation du backup
 
-backup_file=/backup/geonature_backup.sql
+backup_file=/backup/geonature_backup
 
 export PGPASSWORD=${POSTGRES_PASS}
 pg_dump --format=plain \
