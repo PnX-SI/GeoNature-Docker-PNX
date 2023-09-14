@@ -1,6 +1,7 @@
-# GeoNature Docker Services
+# GeoNature Docker BRGM
 
-Dockerisation de geonature et d'application associées
+Dépôt de gestion des scripts Docker de déploiement de GeoNature au BRGM.  
+Il s'appuie sur les images Docker et docker-compose officiels de GeoNature (https://github.com/PnX-SI/GeoNature-Docker-services), mais y ajoutant les compléments spécifiques au déploiement BRGM (ajout de GeoNature-atlas, de pgAdmin, de scripts de sauvegarde...).
 
 ## Les services
 
