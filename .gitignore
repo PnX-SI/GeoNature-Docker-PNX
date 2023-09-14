@@ -1,48 +1,33 @@
-
-# Created by https://www.gitignore.io/api/vim,visualstudiocode
-# Edit at https://www.gitignore.io/?templates=vim,visualstudiocode
-
-### Vim ###
-# Swap
-[._]*.s[a-v][a-z]
-[._]*.sw[a-p]
-[._]s[a-rt-v][a-z]
-[._]ss[a-gi-z]
-[._]sw[a-p]
-
-# Session
-Session.vim
-Sessionx.vim
-
-# Temporary
-.netrwhist
-*~
-# Auto-generated tag files
-tags
-# Persistent undo
-[._]*.un~
-
-### VisualStudioCode ###
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-
-### VisualStudioCode Patch ###
-# Ignore all local history of files
-.history
-
-# End of https://www.gitignore.io/api/vim,visualstudiocode
-
 .env
+*.save
 
-dist
-settings.ini
+# data/services/ pour
+# les config
+# les repertoires custom et statics
+data/services/traefik/certs/*
+data/services/postgres/backup/*
+data/services/geonature/config/*
+data/services/geonature/custom/*
+data/services/geonature/data/*
+data/services/geonature/media/*/*
+data/services/taxhub/static/*
+data/services/taxhub/config/*
+data/services/taxhub/media/*
+data/services/usershub/config/*
+data/services/atlas/custom/*
+data/services/atlas/config/*
 
-**/*.sql
-**/*.zip
-pgdata/**
-!pgdata/.gitkeep
-geonature_common/**
-!geonature_common/.gitkeep
+# data/storage/ pour
+# les données bdd postgres
+# les données pgadmin
+data/storage/postgres
+data/storage/pgadmin/*
+data/storage/redis
+
+projects/*
+
+*.ini
+
+!**/.gitkeep
+docker-compose.override.yml
+

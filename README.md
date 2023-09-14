@@ -1,263 +1,167 @@
-# GeoNature-docker
+# GeoNature Docker Services
 
-Utilisation de Docker pour le déploiement de GeoNature dans le cadre d'un hébergement mutualisé (plusieurs instances GeoNature hébergées par sur un serveur commun).
+Dockerisation de geonature et d'application associées
 
-## Contributeurs
+## Les services
 
-Ce _portage_ de GeoNature sous Docker a été réalisé par le [BRGM](https://www.brgm.fr) dans le cadre de la convention BRGM/OFB.
+ - `postgres`
+ - `usershub`
+ - `taxhub`
+ - `geonature-backend`
+ - `geonature-frontend`
+ - `geonature-worker`: peut reprendre certaine tâches de geonature (import, export, mail, etc...)
+ - `redis`
 
-## Projets liés
-
-### Applications
-
-* [PnX-SI](https://github.com/PnX-SI) / [UsersHub](https://github.com/PnX-SI/UsersHub)
-* [PnX-SI](https://github.com/PnX-SI) / [TaxHub](https://github.com/PnX-SI/TaxHub)
-* [PnX-SI](https://github.com/PnX-SI) / [GeoNature](https://github.com/PnX-SI/GeoNature)
-* [PnX-SI](https://github.com/PnX-SI) / [GeoNature-atlas](https://github.com/PnX-SI/GeoNature-atlas)
-
-### Autres composants
-
-* [kartoza](https://github.com/kartoza) / [docker-postgis](https://github.com/kartoza/docker-postgis) : Base de données PostgreSQL + PostGIS
-* [pgAdmin](https://hub.docker.com/r/dpage/pgadmin4/) : Application d'interfaçage avec la base de données
-* [nginX](https://hub.docker.com/_/nginx/) : Reverse Proxy
-
-## Architecture
-
-```mermaid
-  graph TD
-    classDef label stroke-width:0;
-    classDef node fill:white,stroke:black;
-    nginx(nginX);
-    pgadmin(PGAdmin);
-    app(Geonature App);
-    db(Geonature DB);
-    nginx -- 80 --> pgadmin
-    nginx -- "5000 (GeoNature)" --> app
-    nginx -- "5001 (UsersHub)" --> app
-    nginx -- "5002 (TaxHUb)" --> app
-    nginx -- "8080 (Atlas)" --> app
-    pgadmin -- 5432 --> db
-    app -- 5432 --> db
-```
-
-## Installation
-
-### Prérequis/Informations initiales
-
-#### Dépendances
-
-Ce projet nécessite l'installation préalable de:
-* [docker](https://docs.docker.com/engine/install/)
-* [git](https://git-scm.com/download/linux)
-* [docker-compose](https://docs.docker.com/compose/install/)
-
-_Dans notre exemple nous utiliserons un certain nombre d'assertions._
-
-* Le répertoire `/applications` est la base de notre environnement de travail.
-* Le répertoire `/applications/projets` contiendra les différents instances de GeoNature.
-* Le répertoire `/applications/geonature` contiendra le contenu du dépôt git de _GeoNature_.
-* Le répertoire `/applications/administration` contiendra les différents outils d'administration.
-
-#### Dépôt geonature
-
-* Dans le dépôt git, la branche à utiliser est `main`.
-* Dans le dépôt git, les sources sont dans le répertoire racine (celui où est situé ce `README.md`).
-
-### Etapes d'installation
-
-#### Cloner le dépôt _GeoNature-docker_ sur la machine
-
-
-```bash
-mkdir -p /applications
-
-cd /applications
-
-git clone https://github.com/PnX-SI/GeoNature-docker.git geonature
-
-### Actuellement le bon contenu est dans la branche "main", il faut donc se mettre dessus (si vous venez de checkout, ce sera le cas directement).
-cd geonature
-git checkout main
-```
-
-#### Construire l'image GeoNature (facultatif)
-
-_Cette étape est facultative si l'image peut-être récupérée d'un registre Docker ou bien si le CI/CD du projet est mis en place._
-
-```bash
-### Dans le répertoire _app__, il faut adapter le nom du tag
-docker build --force-rm -t geonature:geonature-verified app/
-```
-
-#### Créer un répertoire pour le GeoNature que l'on veut déployer, par exemple en spécifiant votre domaine (remplacer `<mondomaine.org>` par le nom de votre choix).
-
-```bash
-mkdir -p /applications/projets/<mondomaine.org>
-```
-
-#### Copier l'environnement
-
-```bash
-cp /applications/geonature/env.sample /applications/projets/<mondomaine.org>/.env
-cp /applications/geonature/docker-compose.yaml /applications/projets/<mondomaine.org>/
-```
-
-#### Editer l'environnement
-
-```bash
-vim /applications/projets/<mondomaine.org>/.env
-```
-
-_Exemple de configuration (dans cet exemple, une image déjà présente est utilisé, si vous avez construit l'image docker par vous même, indiquez ici son tag):_
-
-```properties
-POSTGRES_DB=geonature
-POSTGRES_USER=geonature_user
-POSTGRES_PASS=geonature
-PGDATA_DIR=/applications/projets/geonature.brgm-rec.fr/pgdata
-BOOTSTRAP_DIR=/applications/geonature/bootstrap_files
-GEONATURE_COMMON_DIR=/applications/projets/geonature.brgm-rec.fr/geonature_common
-GEONATURE_DOMAIN=geonature.brgm-rec.fr
-GEONATURE_PROTOCOL=https
-GEONATURE_IMAGE=geonature:geonature-verified
-NGINX_CONF=/applications/geonature/nginx.conf
-HTTP_PROXY=http://someproxy.loc.al:port
-PGADMIN_DEFAULT_EMAIL=user@domain.geonature_com
-PGADMIN_DEFAULT_PASSWORD=SuperSecret
-```
-
-#### Créer le réseau permettant de gérer le _reverse proxy_
-
-```bash
-docker network create rpx_net
-```
-
-#### Copier le répertoire _nginx-proxy_ où on veut gérer le proxy
-
-```bash
-mkdir -p /applications/administration
-
-cp nginx-proxy /applications/administration/nginx-proxy
+- `traefik`
 
 ```
-
-#### Installer le service nginx-proxy
-
-_Vous pouvez aussi aller lire la documentation dans le répertoire nginx-proxy._
-
-```bash
-cp /applications/administration/nginx-proxy/nginx-proxy.service /etc/systemd/system
-systemctl daemon-reload
-systemctl enable nginx-proxy --now
+SERVICE              PORTS
+geonature-backend    8000/tcp
+geonature-frontend   80/tcp
+geonature-worker     8000/tcp
+postgres             0.0.0.0:5435->5432/tcp, :::5435->5432/tcp
+redis                6379/tcp
+taxhub               5000/tcp
+traefik              0.0.0.0:80->80/tcp, 0.0.0.0:443->443/tcp, 0.0.0.0:8889->8080/tcp, :::80->80/tcp, :::443->443/tcp, :::8889->8080/tcp
+usershub             5001/tcp
 ```
 
-#### Installer le service geonature
 
-```bash
-### Copie de l'Unit
-cp /applications/geonature/geonature.service /etc/systemd/system/
+![Schéma des services](docs/schema_services_0.1.png)
 
-### Edition de l'Unit (au moins deux parties à modifier ##Geonature##)
-vim /etc/systemd/system/geonature.service
 
-### Activation du service
-systemctl daemon-reload
-systemctl enable geonature --now
+## Utilisation
+
+- rapatrier le dépôt
+- se placer dans le répertoire du dépôt
+- créer un fichier   `.env` (copier ou s'inspirer des fichiers `.env` exemples)
+- créer les fichiers de configuration (vous pouver copier les fichiers de config *vide* d'un seul coup avec la commande `./scrits/init_applications_config.sh`)
+- lancer les dockers avec la commande `docker compose up -d`
+- les logs sont accessibles avec la commande `docker compose logs -f` ou `docker compose -f <nom du service>`
+
+## Configuration
+
+Il y a deux moyen pour configurer les applications: les fichiers de configuration et les variables d'environnement.
+
+### Dossiers et fichiers
+
+Par défaut, la structure des fichiers est la suivante
+
+``` bash
+./data
+    - services/  # fichiers de config, custom, medias, backup, etc ... des application
+                # destinés à être accessible et/ou modifiable par les utilisateur/administrateurs
+
+        - geonature/
+            - config/ # dossier de configuration contenant `geonature_config.toml`, `occtax_config.toml`, etc...
+            - custom/ # dossier  `custom` de geonature (surcharge le dossier `static`)
+            - media/ # dossier `media` de geonature
+            - data/ # dossier `data` (peux contenir les fichiers pour les données des référentiels (taxref, ref_geo, ref_nomenclature, etc....))
+
+        - usershub/
+            - config/ # dossier contenant le fichier config.py
+
+        - taxhub/
+            - config/ # dossier contenant le fichier config.py
+            - media/ # dossier des médias de taxhub
+
+        - atlas
+            - config/ # dossier contenant le fichier config.py
+            - custom/ # dossier `custom de l'atlas (contient le style, les templates, les scripts js, etc...)
+
+        - postgres
+            - backup/ # contient les fichier de sauvegarde de la bdd
+
+    - storage # stockage des dossiers nécessaire pour le fonctionnement
+        - postgres # dossier contenant la bdd
+        - pgadmin # ...
 ```
 
-## Mise à jour de la configuration
+Voir la documentation des différentes applications pour renseigner les fichiers de configuration
 
-### Installer un module
+- [fichier exemple pour GeoNature](./sources/GeoNature/config/geonature_config.toml.sample)
+- [fichier exemple pour UsersHub](./sources/UsersHub/config/config.py.sample)
+- [fichier exemple pour TaxHub](./sources/TaxHub/apptax/config.py.sample)
+- [fichier exemple pour GeoNature-atlas](./sources/GeoNature-atlas/atlas/configuration/config.py.sample)
 
-L'installation des modules se fait indépendamment dans chacune des instance. Il faut pour cela se connecter terminal du conteneur. Suivez ensuite la démarche habituelle d'installation du module. Ici un exemple avec le module [gn_module_dashboard](https://github.com/PnX-SI/gn_module_dashboard).
+à noter que certaines variables seront fournies en tant que variables d'environnement (dans le fichier `.env` par exemple) (voir les fichiers [docker-compose](./docker-compose.yml))
 
-```bash
-docker ps
-# On récupère le nom ou le hash du container de geonature pour lancer un exec dessus
-docker exec -it <id ou nom de mon conteneur geonature> /bin/bash
+comme par exemple:
+  - `URL_APPLICATION`
+  - `SQLALCHEMY_DATABASE_URI`
+  - `SECRET_KEY`
+### Variables d'environnement
 
-mkdir -p /geonature/gn_modules
-cd /geonature/gn_modules
+Ces variable peuvent être définie dans un fichier `.env`.
 
-# Téléchargement, décompression et configuration du module
-wget https://github.com/PnX-SI/gn_module_dashboard/archive/0.2.0.zip 
-unzip 0.2.0.zip
-mv gn_module_dashboard_0.2.0 gn_module_dashboard
+#### Configuration des applications
 
-# Finalisation de l'installation du module
-# On initialize l'environnement virtuel python de GeoNature
-source /geonature/geonature/backend/venv/bin/activate
-# On installe le module GeoNature avec la commande : geonature install_gn_module <chemin absolu vers mon module> <url relative du module>
-geonature install_gn_module /geonature/gn_modules/gn_module_dashboard dashboard
+Il est possible de passer par les variables d'environnemnt pour configurer les applications.
 
-```
+Par exemple toutes les variables préfixée par `GEONATURE_` seront traduite par un configuration de l'application GéoNature (`USERSHUB_` pour usershub, et `TAXHUB_` pour taxhub) (voir https://flask.palletsprojects.com/en/2.2.x/api/#flask.Config.from_prefixed_env).
 
-### Changement d'URL de l'application
+Par exemple:
+- `GEONATURE_SQLALCHEMY_DATABASE_URI` pour `app.config['SQLALCHEMY_DATABASE_URI']`
+- `GEONATURE_CELERY__broker_url` pour `app.config['GEONATURE_CELERY']['broker_url]`
 
-Si vous avez besoin de changer l'URL de l'application (changement de DNS, ou bien passage de http à https), il ne suffit pas de modifier le `.env` pour que celà fonctionne. En effet, les fichiers de configuration de l'application étant transformés pour le front et dans une moindre mesure pour la partie Python, il faut aussi modifier ces fichiers là.
+#### Configuration des services
 
-#### Dans tous les cas
+Voir les fichiers d'exemple:
 
-Modifiez le `.env` pour mettre à jour l'URL et le protocole. Ce fichier est quand même réutilisé pour créer les `settings.ini` des différentes applications.
+- [configuration de développement](./.env.dev.exemple)
 
-#### Configuration UsersHub
+- [configuration de production](./.env.prod.exemple)
 
-Modifiez le fichier `geonature_common/usershub/config/config.py` en remplaçant la valeur de la variable `URL_APPLICATION`.
+##### Quelques variables essentielles
 
-#### Configuration TaxHub
+- `GDS_VERSION`: Version de GeoNature-Docker-services (donne la version des applications) (voir le fichier  [changelog](./docs/changelog.md) pour le détails des versions des applications)
 
-_Taxhub_ n'utilise que le fichier `settings.ini`.
+- `DOMAIN`: nom de domaine des applications
 
-#### Configuration GeoNature
+- `PROJECT_NAME`: (gds) nom du projet, se repercute sur le nom des container et des réseaux, peut être utile dans le cas de plusieurs instances hébergées sur un même serveur
 
-Modifier le fichier `geonature_common/geonature/config/geonature_config.toml` en remplaçant les valeurs pour `URL_APPLICATION`, `API_ENDPOINT` et `API_TAXHUB`.
+- `APPLICATIONS_PREFIX`: preffixe de l'url de l'application (s'il n'est pas à la racine du nom de domaine)
 
-Ensuite, il faut lancer la mise à jour de la configuration à l'application.
+- `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, `POSTGRES_DB`, `POSTGRES_PORT`: paramètres  d'accès à la bdd
 
-```bash
-docker ps
-# On récupère le nom ou le hash du container de geonature pour lancer un exec dessus
-docker exec -it <id ou nom de mon conteneur geonature> /bin/bash
-# Les commande suivantes sont à exécuter dans le container
-# On va dans le Frontend
-cd /geonature/geonature/frontend
-# On active npm (via nvm)
-nvm install
-nvm use
-# On va dans le Backend
-cd /geonature/geonature/backend
-# On active le venv Python et on lance la commande de mise à jour de la configuration
-source venv/bin/activate
-geonature update_configuration
-deactivate
-# On peut ensuite sortir du container (via CTRL+D ou autre)
-```
+## Package et versionnement
 
-#### Configuration Atlas
+Une actions permet la publication d'image dockers sur les packages du dépôt.
 
-_Atlas_ n'utilise que le fichier `settings.ini`.
+- `gds-geonature-backend:<VERSION>` (Geonature + 4 modules)
+- `gds-geonature-frontend:<VERSION>` (Geonature + 4 modules)
 
-### Charger un dump
+La valeur de `VERSION` peut être:
 
-#### Création de la base
+- `current`: branche *travail en cours*
+- `develop`: branche *develop* (un peu plus stable que current)
+- `main`: correspond à la dernière release
+- `1.1`: version releasée (voir le fichier [changelog](./docs/changelog.md) pour avoir le détails des applicaitons et des modules.
 
-La base doit être créée avant côté PGAdmin.
 
-Il faut penser à ajouter les extensions _postgis_ et _postgis_raster_ **avant** de lancer la restauration.
+### Liens utiles
+## Geonature
 
-#### Upload du dump
+https://github.com/PnX-SI/GeoNature
 
-Le dump doit être placé sur le serveur.
+- [`Dockerfile` backend](https://github.com/PnX-SI/GeoNature/blob/master/backend/Dockerfile)
+- [`Dockerfile` frontend](https://github.com/PnX-SI/GeoNature/blob/master/frontend/Dockerfile)
 
-* Copier le dump dans `/applications/projet/votreprojetgeonature/geonature_common/dbdump`
+- [`Dockerfile` backend + 4 modules](./build/Dockerfile-geonature-backend)
+- [`Dockerfile` frontend + 4 modules](./build/Dockerfile-geonature-frontend)
 
-Il faut ensuite aller dans le container de _PGAdmin_ pour copier le dump dans le répertoire qui va bien (_A noter, il pourrait probablement être possible de monter un volume sur le répertoire qui va bien_).
 
-* Se connecter au container `docker exec -it votreprojetgeonature_pgadmin_1_xxxxxxx /bin/sh`
-* Déplacer le dump `cp /geonature/geonature_common/dbdump/votre.dump /var/lib/pgadmin/storage/user_domain.com/`
+## UsersHub
 
-#### Lancement de la restauration
+https://github.com/PnX-SI/UsersHub
 
-Dans PGAdmin, sur votre nouvelle base, choisissez l'option _Restore_, choisissez le fichier (attention à bien afficher tous les types de fichiers). Dans les _Restore options_, cochez les _Do not save_ _Owner_ et _Privilege_.
+- [`Dockerfile`](https://github.com/PnX-SI/UsersHub/blob/master/Dockerfile)
 
-_Il peut y avoir quelques erreurs, vérifiez si elles sont graves ou non (les erreurs de création de comptes ne sont pas graves)._
+
+#### TaxHub
+
+https://github.com/PnX-SI/Taxhub
+
+- [`Dockerfile`](https://github.com/PnX-SI/TaxHub/blob/master/Dockerfile)
+
+

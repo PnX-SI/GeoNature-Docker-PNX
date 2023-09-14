@@ -1,0 +1,3 @@
+# settings.ini.test
+GEONATURE_SKIP_POPULATE_DB=false
+ATLAS_INSTALL_SCHEMA=true

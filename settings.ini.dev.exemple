@@ -1,0 +1,8 @@
+DOMAIN="geonatu.re"
+ATLAS_DOMAIN="atlas-geonatu.re"
+ATLAS_PREFIX="/"
+PROJECT_NAME=parc_dev
+PGADMIN_DEFAULT_EMAIL="xxxxxxxxxxxxxx"
+PGADMIN_DEFAULT_PASSWORD="xxxxxxxxxxxxx"
+HTTP_PROXY="xxxxxxxxxxxxxxxxxxx"
+HTTPS_PROXY="xxxxxxxxxxxxxxxxxxxxx"
