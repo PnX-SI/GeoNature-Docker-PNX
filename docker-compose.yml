@@ -2,13 +2,13 @@ version: "3.9"
 
 x-defaults: &defaults
   user: ${DOCKER_UID}:${DOCKER_GID}
+
+x-env-defaults: &env-defaults
+
+x-geonature-backend-defaults: &geonature-backend-defaults
   environment:
     - http_proxy=${HTTP_PROXY}
     - https_proxy=${HTTPS_PROXY}
-
-x-geonature-backend-defaults: &geonature-backend-defaults
-  <<: *defaults
-  environment:
     - GEONATURE_SQLALCHEMY_DATABASE_URI=${GEONATURE_SQLALCHEMY_DATABASE_URI}
     - GEONATURE_URL_APPLICATION=${GEONATURE_URL_APPLICATION}
     - GEONATURE_API_ENDPOINT=${GEONATURE_API_ENDPOINT}
@@ -129,6 +129,8 @@ services:
     volumes:
       - ${USERSHUB_VOLUME_CONFIG_DIRECTORY}:/dist/config/
     environment:
+      - http_proxy=${HTTP_PROXY}
+      - https_proxy=${HTTPS_PROXY}
       - USERSHUB_URL_APPLICATION=${USERSHUB_URL_APPLICATION}
       - USERSHUB_APPLICATION_ROOT=${USERSHUB_PREFIX}
       - USERSHUB_SQLALCHEMY_DATABASE_URI=${USERSHUB_SQLALCHEMY_DATABASE_URI}
@@ -170,6 +172,8 @@ services:
       - ${TAXHUB_VOLUME_CONFIG_DIRECTORY}:/dist/config
       - ${TAXHUB_VOLUME_MEDIA_DIRECTORY}:/dist/static/medias
     environment:
+      - http_proxy=${HTTP_PROXY}
+      - https_proxy=${HTTPS_PROXY}
       - TAXHUB_APPLICATION_ROOT=${TAXHUB_PREFIX}
       - TAXHUB_SQLALCHEMY_DATABASE_URI=${TAXHUB_SQLALCHEMY_DATABASE_URI}
       - TAXHUB_SECRET_KEY=${TAXHUB_SECRET_KEY}
@@ -301,6 +305,8 @@ services:
     image: ${ATLAS_IMAGE}
     container_name: ${ATLAS_CONTAINER_NAME}
     environment:
+      - http_proxy=${HTTP_PROXY}
+      - https_proxy=${HTTPS_PROXY}
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
