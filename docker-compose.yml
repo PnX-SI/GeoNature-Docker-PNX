@@ -128,6 +128,7 @@ services:
     container_name: ${USERSHUB_CONTAINER_NAME}
     volumes:
       - ${USERSHUB_VOLUME_CONFIG_DIRECTORY}:/dist/config/
+      - ${ASSETS_DIRECTORY}/healthcheck/healthcheck_usershub.sh:/healthcheck.sh
     environment:
       - http_proxy=${HTTP_PROXY}
       - https_proxy=${HTTPS_PROXY}
@@ -149,8 +150,14 @@ services:
       - "traefik.http.routers.${USERSHUB_CONTAINER_NAME}-https.tls=${TRAEFIK_TLS}"
       - "traefik.http.routers.${USERSHUB_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
+    command: 
+      - gunicorn 
+      - app.app:create_app() 
+      - --bind=0.0.0.0:5001 
+      - --reload 
+      - --reload-extra-file=config/config.py
     healthcheck:
-      test: ["CMD", "curl", "--noproxy", "localhost", "http://localhost:5001${USERSHUB_PREFIX}/login"]
+      test: ["CMD-SHELL", "/healthcheck.sh"]
       interval: 5s
       timeout: 10s
       retries: 10
@@ -171,6 +178,7 @@ services:
     volumes:
       - ${TAXHUB_VOLUME_CONFIG_DIRECTORY}:/dist/config
       - ${TAXHUB_VOLUME_MEDIA_DIRECTORY}:/dist/static/medias
+      - ${ASSETS_DIRECTORY}/healthcheck/healthcheck_taxhub.sh:/healthcheck.sh
     environment:
       - http_proxy=${HTTP_PROXY}
       - https_proxy=${HTTPS_PROXY}
@@ -189,7 +197,7 @@ services:
       - "traefik.http.routers.${TAXHUB_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
     healthcheck:
-      test: ["CMD", "curl", "--noproxy", "localhost", "http://localhost:5000${TAXHUB_APPLICATION_ROOT}/"]
+      test: ["CMD-SHELL", "/healthcheck.sh"]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -213,7 +221,7 @@ services:
       - ${GEONATURE_VOLUME_CONFIG_DIRECTORY}:/dist/config/
       - ${GEONATURE_VOLUME_MEDIA_DIRECTORY}:/dist/media
     entrypoint: []
-    command: pip install watchdog; watchmedo auto-restart -d /dist/config/ -p geonature_config.toml -- celery -A geonature.celery_app:app worker
+    command: watchmedo auto-restart -d /dist/config/ -p geonature_config.toml -- celery -A geonature.celery_app:app worker
     logging:
       options:
         tag: ${GEONATURE_WORKER_CONTAINER_NAME}
@@ -226,6 +234,9 @@ services:
     environment:
       - NGINX_LOCATION=${GEONATURE_FRONTEND_PREFIX}
       - API_ENDPOINT="${GEONATURE_API_ENDPOINT}"
+      - ${ASSETS_DIRECTORY}/healthcheck/healthcheck_geonature_frontend.sh:/healthcheck.sh
+    volumes:
+      - ${ASSETS_DIRECTORY}/healthcheck/healthcheck_geonature_frontend.sh:/healthcheck.sh
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-http.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`${GEONATURE_FRONTEND_PREFIX}`)"
@@ -237,8 +248,8 @@ services:
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
     healthcheck:
-      test: ["CMD", "curl", "--noproxy", "localhost", "http://localhost:80${GEONATURE_FRONTEND_PREFIX}/"]
-      interval: 1s
+      test: ["CMD", "/healthcheck.sh"]
+      interval: 2s
       timeout: 10s
       retries: 10
       start_period: 0s
@@ -274,6 +285,7 @@ services:
       - ${GEONATURE_VOLUME_DATA_DIRECTORY}:/dist/data
       - ${GEONATURE_VOLUME_MEDIA_DIRECTORY}:/dist/media
       - ${GEONATURE_VOLUME_CUSTOM_DIRECTORY}:/dist/custom
+      - ${ASSETS_DIRECTORY}/healthcheck/healthcheck_geonature_backend.sh:/healthcheck.sh
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.${GEONATURE_BACKEND_CONTAINER_NAME}-http.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`${GEONATURE_BACKEND_PREFIX}`)"
@@ -285,7 +297,7 @@ services:
       - "traefik.http.routers.${GEONATURE_BACKEND_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
     healthcheck:
-      test: ["CMD", "curl", "--noproxy", "localhost", "http://localhost:8000${GEONATURE_BACKEND_PREFIX}/gn_commons/config"]
+      test: ["CMD-SHELL", "/healthcheck.sh"]
       interval: ${GEONATURE_BACKEND_HEALTHCHECK_INTERVAL}
       timeout: 10s
       retries: 30
@@ -328,6 +340,7 @@ services:
     volumes:
       - ${ATLAS_VOLUME_CONFIG_DIRECTORY}:/dist/config
       - ${ATLAS_VOLUME_CUSTOM_DIRECTORY}:/dist/static/custom
+      - ${ASSETS_DIRECTORY}/healthcheck/healthcheck_atlas.sh:/healthcheck.sh
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.${ATLAS_CONTAINER_NAME}-http.rule=Host(`${ATLAS_DOMAIN}`) && PathPrefix(`${ATLAS_PREFIX}`)"
@@ -339,7 +352,7 @@ services:
       - "traefik.http.routers.${ATLAS_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
     healthcheck:
-      test: ["CMD", "curl", "--noproxy", "localhost", "http://localhost:8080${ATLAS_APPLICATION_ROOT}/"]
+      test: ["CMD-SHELL", "/healthcheck.sh"]
       interval: ${ATLAS_HEALTHCHECK_INTERVAL}
       timeout: 10s
       retries: 20
