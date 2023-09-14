@@ -213,7 +213,7 @@ services:
       - ${GEONATURE_VOLUME_CONFIG_DIRECTORY}:/dist/config/
       - ${GEONATURE_VOLUME_MEDIA_DIRECTORY}:/dist/media
     entrypoint: []
-    command: pip install watchdog && watchmedo auto-restart -d /dist/config/ -p geonature_config.toml -- celery -A geonature.celery_app:app worker
+    command: pip install watchdog; watchmedo auto-restart -d /dist/config/ -p geonature_config.toml -- celery -A geonature.celery_app:app worker
     logging:
       options:
         tag: ${GEONATURE_WORKER_CONTAINER_NAME}
