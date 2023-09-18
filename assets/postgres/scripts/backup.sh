@@ -12,14 +12,14 @@ echo "+-------------------------------+"
 log_file_global=/backup/backup.log
 
 date_start=$(date '+%Y-%m-%d_%H-%M-%S')
-date_jour=$(date '+%Y-%m-%d')
+date_jour=$(date '+%Y-%m-%d_%H-%M-%S')
 log_line_start="${date_start} -> ... (en cours)"
 echo $log_line_start >> $log_file_global
 
 
 # - 2 )creation du backup
 
-backup_file=/backup/geonature_backup
+backup_file=/backup/geonature_backup.sql
 
 export PGPASSWORD=${POSTGRES_PASS}
 pg_dump --format=plain \
