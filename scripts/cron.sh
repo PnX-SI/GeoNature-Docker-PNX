@@ -11,5 +11,6 @@ docker compose exec postgres /bin/sh /scripts/backup.sh
 
 # backup des fichier des services (sauf backup de la base)
 rm -f data/services/services.tar.gz
-tar cvfz --exclude 'geonature_backup*' ./data/services/services.tar.gz data/services/
+tar --exclude 'geonature_backup*' --exclude 'services.tar.gz' -zcvf ./services.tar.gz data/services/
+mv services.tar.gz data/services/services.tar.gz
 

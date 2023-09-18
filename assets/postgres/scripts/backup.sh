@@ -28,16 +28,10 @@ pg_dump --format=plain \
     -d ${POSTGRES_DB} -h localhost -U ${POSTGRES_USER} \
     > $backup_file
 
-# patch pour l'extension pg_trgm
-sed -i "s/with SCHEMA pg_catalog/with SCHEMA public/" $backup_file
-
-
 #   - compression du backup
-
 tar cvfz ${backup_file}_${date_jour}.tar.gz ${backup_file}
 
 #   - on regarde la taille du backup non compressé (pour les logs)
-
 size_h_backup=$(ls -lh $backup_file | awk '{print $5}')
 size_backup=$(ls -l $backup_file | awk '{print $5}')
 
@@ -45,7 +39,6 @@ size_backup=$(ls -l $backup_file | awk '{print $5}')
 rm ${backup_file}
 
 # - 3) log (end)
-
 date_end=$(date '+%Y-%m-%d_%H-%M-%S')
 log_line_end="${date_start} -> ${date_end} : $size_h_backup ($size_backup)"
 sed -i "s/${log_line_start}.*/${log_line_end}/" $log_file_global
