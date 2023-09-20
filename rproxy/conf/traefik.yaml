@@ -1,0 +1,40 @@
+global:
+  sendAnonymousUsage: false
+  CheckNewVersion: false
+
+log:
+  level: INFO
+  format: common
+
+accessLog: {}
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    watch: true
+    exposedByDefault: false
+    swarmMode: false
+    network: "rpx_net"
+  file:
+    filename: /dynamic.yaml
+
+api:
+  dashboard: true
+  debug: false
+  insecure: true
+
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: "geon@tu.re"
+      storage: "/letsencrypt/acme.json"
+      httpChallenge:
+        entryPoint: web
+        # for dev
+        # caServer: https://acme-staging-v02.api.letsencrypt.org/directory

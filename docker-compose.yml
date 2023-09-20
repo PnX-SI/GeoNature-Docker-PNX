@@ -1,59 +1,371 @@
-version: '3.7'
+version: "3.9"
+
+x-defaults: &defaults
+  user: ${DOCKER_UID}:${DOCKER_GID}
+
+x-env-defaults: &env-defaults
+
+x-geonature-backend-defaults: &geonature-backend-defaults
+  environment:
+    - http_proxy=${HTTP_PROXY}
+    - https_proxy=${HTTPS_PROXY}
+    - GEONATURE_SQLALCHEMY_DATABASE_URI=${GEONATURE_SQLALCHEMY_DATABASE_URI}
+    - GEONATURE_URL_APPLICATION=${GEONATURE_URL_APPLICATION}
+    - GEONATURE_API_ENDPOINT=${GEONATURE_API_ENDPOINT}
+    - GEONATURE_BACKEND_PREFIX=${GEONATURE_BACKEND_PREFIX}
+    - GEONATURE_API_TAXHUB=${GEONATURE_API_TAXHUB}
+    - GEONATURE_CONFIG_FILE=${GEONATURE_CONFIG_FILE}
+    - GEONATURE_CELERY__broker_url=${GEONATURE_CELERY__broker_url}
+    - GEONATURE_CELERY__result_backend=${GEONATURE_CELERY__result_backend}
+    - GEONATURE_SECRET_KEY=${GEONATURE_SECRET_KEY}
+    - GEONATURE_SKIP_POPULATE_DB=${GEONATURE_SKIP_POPULATE_DB}
+    - srid_local=${GEONATURE_SRID_LOCAL}
+    - add_sample_data=${GEONATURE_ADD_SAMPLE_DATA}
+    - install_bdc_statuts=${GEONATURE_INSTALL_BDC_STATUTS}
+    - install_sig_layers=${GEONATURE_INSTALL_SIG_LAYERS}
+    - install_grid_layer=${GEONATURE_INSTALL_GRID_LAYER}
+    - install_ref_sensitivity=${GEONATURE_INSTALL_REF_SENSITIVITY}
+    - install_default_dem=${GEONATURE_INSTALL_DEFAULT_DEM}
+    - vectorise_dem=${GEONATURE_INSTALL_VECTORISE_DEM}
+    - usershub=${GEONATURE_INSTALL_USERSHUB}
+    - usershub_samples=${GEONATURE_INSTALL_USERSHUB_SAMPLES}
+    - taxhub=${GEONATURE_INSTALL_TAXHUB}
+    - taxhub_samples=${GEONATURE_INSTALL_TAXHUB_SAMPLES}
+    - C_FORCE_ROOT=false
 
 networks:
-  geonat:
+  default:
     driver: bridge
-  rpx_net:
+  traefik:
+    name: $TRAEFIK_NETWORK_NAME
     external: true
-    name: rpx_net
 
 services:
+
+  redis:
+    networks:
+      - default
+    image: ${REDIS_IMAGE}
+    container_name: ${REDIS_CONTAINER_NAME}
+    volumes:
+      - ${REDIS_VOLUME_DATA_DIRECTORY}:/data
+    logging:
+      options:
+        tag: ${REDIS_CONTAINER_NAME}
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres:
+    networks:
+      - default
+    image: ${POSTGRES_IMAGE}
+    shm_size: ${POSTGRES_SHM_SIZE}
+    container_name: ${POSTGRES_CONTAINER_NAME}
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+    command: >
+      -c work_mem=256MB
+      -c maintenance_work_mem=256MB
+      -c max_wal_size=1GB
+    volumes:
+      - ${POSTGRES_VOLUME_INIT_DB_DIRECTORY}:/docker-entrypoint-initdb.d/
+      - ${POSTGRES_VOLUME_DATA_DIRECTORY}:/var/lib/postgresql/data
+      - ${POSTGRES_VOLUME_BACKUP_DIRECTORY}:/backup
+      - ${POSTGRES_VOLUME_SCRIPTS_DIRECTORY}:/scripts
+    healthcheck:
+      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB}", "-U", "${POSTGRES_USER}", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      options:
+        tag: ${POSTGRES_CONTAINER_NAME}
+
   pgadmin:
-    image: dpage/pgadmin4:4.27
+    networks:
+      - default
+      - traefik
+    depends_on:
+      postgres:
+        condition: service_healthy
+    image: ${PGADMIN_IMAGE}
+    container_name: ${PGADMIN_CONTAINER_NAME}
     environment:
       - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
       - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}
-    networks:
-      - geonat
-
-  db:
-    image: kartoza/postgis:11.0-2.5
-    environment:
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASS=${POSTGRES_PASS}
-      - ALLOW_IP_RANGE=0.0.0.0/0
-      - POSTGRES_MULTIPLE_EXTENSIONS=postgis,hstore,"uuid-ossp","pg_trgm","postgis_raster"
-      - EXTRA_CONF=datestyle='ISO, DMY'
+      - SCRIPT_NAME=${PGADMIN_PREFIX}
     volumes:
-      - ${PGDATA_DIR}:/var/lib/postgresql
-      - ${GEONATURE_COMMON_DIR}:/geonature
-    networks:
-      - geonat
+      - ${PGADMIN_VOLUME_DATA_DIRECTORY}:/var/lib/pgadmin
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${PGADMIN_CONTAINER_NAME}-http.rule=Host(`${PGADMIN_DOMAIN}`) && PathPrefix(`${PGADMIN_PREFIX}`)"
+      - "traefik.http.routers.${PGADMIN_CONTAINER_NAME}-http.entrypoints=web"
+      - "traefik.http.routers.${PGADMIN_CONTAINER_NAME}-http.middlewares=https-redirectscheme@file"
+      - "traefik.http.routers.${PGADMIN_CONTAINER_NAME}-https.rule=Host(`${PGADMIN_DOMAIN}`) && PathPrefix(`${PGADMIN_PREFIX}`)"
+      - "traefik.http.routers.${PGADMIN_CONTAINER_NAME}-https.entrypoints=websecure"
+      - "traefik.http.routers.${PGADMIN_CONTAINER_NAME}-https.tls=${TRAEFIK_TLS}"
+      - "traefik.http.routers.${PGADMIN_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
+      - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
+    logging:
+      options:
+        tag: ${PGADMIN_CONTAINER_NAME}
 
-  geonature:
-    image: ${GEONATURE_IMAGE}
+  usershub:
+    <<: *defaults
+    networks:
+      - default
+      - traefik
+    depends_on:
+      geonature-backend:
+        condition: service_healthy
+    image: ${USERSHUB_IMAGE}
+    container_name: ${USERSHUB_CONTAINER_NAME}
     volumes:
-      - ${GEONATURE_COMMON_DIR}:/geonature
-      - ${BOOTSTRAP_DIR}:/mnt_bootstrap_files
+      - ${USERSHUB_VOLUME_CONFIG_DIRECTORY}:/dist/config/
+      - ${ASSETS_DIRECTORY}/usershub:/assets
     environment:
-      - GEONATURE_PROTOCOL=${GEONATURE_PROTOCOL}
-      - GEONATURE_DOMAIN=${GEONATURE_DOMAIN}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASS=${POSTGRES_PASS}
       - http_proxy=${HTTP_PROXY}
-      - https_proxy=${HTTP_PROXY}
-    networks:
-      - geonat
+      - https_proxy=${HTTPS_PROXY}
+      - USERSHUB_URL_APPLICATION=${USERSHUB_URL_APPLICATION}
+      - USERSHUB_APPLICATION_ROOT=${USERSHUB_PREFIX}
+      - USERSHUB_SQLALCHEMY_DATABASE_URI=${USERSHUB_SQLALCHEMY_DATABASE_URI}
+      - USERSHUB_SECRET_KEY=${USERSHUB_SECRET_KEY}
+      - USERSHUB_SETTINGS=${USERSHUB_SETTINGS}
+      - USERSHUB_ACTIVATE_APP=${USERSHUB_ACTIVATE_APP}
+      - USERSHUB_ACTIVATE_API=${USERSHUB_ACTIVATE_API}
+      - USERSHUB_COOKIE_EXPIRATION=${USERSHUB_COOKIE_EXPIRATION}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${USERSHUB_CONTAINER_NAME}-http.rule=Host(`${USERSHUB_DOMAIN}`) && PathPrefix(`${USERSHUB_PREFIX}`)"
+      - "traefik.http.routers.${USERSHUB_CONTAINER_NAME}-http.entrypoints=web"
+      - "traefik.http.routers.${USERSHUB_CONTAINER_NAME}-http.middlewares=https-redirectscheme@file"
+      - "traefik.http.routers.${USERSHUB_CONTAINER_NAME}-https.rule=Host(`${USERSHUB_DOMAIN}`) && PathPrefix(`${USERSHUB_PREFIX}`)"
+      - "traefik.http.routers.${USERSHUB_CONTAINER_NAME}-https.entrypoints=websecure"
+      - "traefik.http.routers.${USERSHUB_CONTAINER_NAME}-https.tls=${TRAEFIK_TLS}"
+      - "traefik.http.routers.${USERSHUB_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
+      - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
+    command: 
+      - gunicorn 
+      - app.app:create_app() 
+      - --bind=0.0.0.0:5001 
+      - --reload 
+      - --reload-extra-file=config/config.py
+    healthcheck:
+      test: ["CMD-SHELL", "/assets/healthcheck.sh"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+    logging:
+      options:
+        tag: ${USERSHUB_CONTAINER_NAME}
 
-  rpx:
-    image: nginx:1.17-alpine
-    volumes:
-      - ${NGINX_CONF}:/etc/nginx/conf.d/default.conf
-      - ${GEONATURE_COMMON_DIR}:/geonature
+  taxhub:
+    <<: *defaults
     networks:
-      - geonat
-      - rpx_net
+      - default
+      - traefik
+    depends_on:
+      geonature-backend:
+        condition: service_healthy
+    image: ${TAXHUB_IMAGE}
+    container_name: ${TAXHUB_CONTAINER_NAME}
+    volumes:
+      - ${TAXHUB_VOLUME_CONFIG_DIRECTORY}:/dist/config
+      - ${TAXHUB_VOLUME_MEDIA_DIRECTORY}:/dist/static/medias
+      - ${ASSETS_DIRECTORY}/taxhub:/assets
     environment:
-      - "VIRTUAL_HOST=${GEONATURE_DOMAIN}"
+      - http_proxy=${HTTP_PROXY}
+      - https_proxy=${HTTPS_PROXY}
+      - TAXHUB_APPLICATION_ROOT=${TAXHUB_PREFIX}
+      - TAXHUB_SQLALCHEMY_DATABASE_URI=${TAXHUB_SQLALCHEMY_DATABASE_URI}
+      - TAXHUB_SECRET_KEY=${TAXHUB_SECRET_KEY}
+      - TAXHUB_SETTINGS=${TAXHUB_SETTINGS}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${TAXHUB_CONTAINER_NAME}-http.rule=Host(`${TAXHUB_DOMAIN}`) && PathPrefix(`${TAXHUB_PREFIX}`)"
+      - "traefik.http.routers.${TAXHUB_CONTAINER_NAME}-http.entrypoints=web"
+      - "traefik.http.routers.${TAXHUB_CONTAINER_NAME}-http.middlewares=https-redirectscheme@file"
+      - "traefik.http.routers.${TAXHUB_CONTAINER_NAME}-https.rule=Host(`${TAXHUB_DOMAIN}`) && PathPrefix(`${TAXHUB_PREFIX}`)"
+      - "traefik.http.routers.${TAXHUB_CONTAINER_NAME}-https.entrypoints=websecure"
+      - "traefik.http.routers.${TAXHUB_CONTAINER_NAME}-https.tls=${TRAEFIK_TLS}"
+      - "traefik.http.routers.${TAXHUB_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
+      - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
+    healthcheck:
+      test: ["CMD-SHELL", "/assets/healthcheck.sh"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 5s
+    logging:
+      options:
+        tag: ${TAXHUB_CONTAINER_NAME}
+
+  geonature-worker:
+    <<: *geonature-backend-defaults
+    networks:
+      - default
+    depends_on:
+      redis:
+          condition: service_started
+      geonature-backend:
+        condition: service_healthy
+    image: ${GEONATURE_BACKEND_IMAGE}
+    container_name: ${GEONATURE_WORKER_CONTAINER_NAME}
+    volumes:
+      - ${GEONATURE_VOLUME_CONFIG_DIRECTORY}:/dist/config/
+      - ${GEONATURE_VOLUME_MEDIA_DIRECTORY}:/dist/media
+      - ${ASSETS_DIRECTORY}/geonature:/assets
+    entrypoint: [/assets/entrypoint_worker.sh]
+    command: watchmedo auto-restart -d /dist/config/ -p geonature_config.toml -- celery -A geonature.celery_app:app worker  --beat --schedule-filename=/dist/media/celerybeat-schedule.db
+    logging:
+      options:
+        tag: ${GEONATURE_WORKER_CONTAINER_NAME}
+
+  geonature-frontend:
+    image: ${GEONATURE_FRONTEND_IMAGE}
+    networks:
+      - traefik
+    container_name: ${GEONATURE_FRONTEND_CONTAINER_NAME}
+    environment:
+      - NGINX_LOCATION=${GEONATURE_FRONTEND_PREFIX}
+      - API_ENDPOINT="${GEONATURE_API_ENDPOINT}"
+    volumes:
+      - ${ASSETS_DIRECTORY}/geonature:/assets
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
+
+      - "traefik.http.middlewares.${GEONATURE_FRONTEND_CONTAINER_NAME}-redirect.redirectregex.regex=^https://${GEONATURE_DOMAIN}/?$"
+      - "traefik.http.middlewares.${GEONATURE_FRONTEND_CONTAINER_NAME}-redirect.redirectregex.replacement=https://${GEONATURE_DOMAIN}/geonature/"
+      - "traefik.http.middlewares.${GEONATURE_FRONTEND_CONTAINER_NAME}-redirect.redirectregex.permanent=true"
+
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-http.entrypoints=web"
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-http.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`${GEONATURE_FRONTEND_PREFIX}`)"
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-http.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`/`)"
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-http.middlewares=https-redirectscheme@file"
+
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.entrypoints=websecure"
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`${GEONATURE_FRONTEND_PREFIX}`)"
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`/`)"
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.tls=${TRAEFIK_TLS}"
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.middlewares=${GEONATURE_FRONTEND_CONTAINER_NAME}-redirect"
+
+    healthcheck:
+      test: ["CMD", "/assets/healthcheck_frontend.sh"]
+      interval: 2s
+      timeout: 10s
+      retries: 10
+      start_period: 0s
+    logging:
+      options:
+        tag: ${GEONATURE_FRONTEND_CONTAINER_NAME}
+
+  geonature-backend:
+    <<: *geonature-backend-defaults
+    networks:
+      - traefik
+      - default
+    depends_on:
+      redis:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    command:
+      - "gunicorn"
+      - "geonature:create_app()"
+      - "--name=geonature"
+      - "--workers=2"
+      - "--threads=2"
+      - "--access-logfile=-"
+      - "--bind=0.0.0.0:8000"
+      - "--reload"
+      - "--reload-extra-file=${GEONATURE_CONFIG_FILE}"
+    image: ${GEONATURE_BACKEND_IMAGE}
+    container_name: ${GEONATURE_BACKEND_CONTAINER_NAME}
+    volumes:
+      - ${GEONATURE_VOLUME_CONFIG_DIRECTORY}:/dist/config
+      - ${GEONATURE_VOLUME_DATA_DIRECTORY}:/dist/data
+      - ${GEONATURE_VOLUME_MEDIA_DIRECTORY}:/dist/media
+      - ${GEONATURE_VOLUME_CUSTOM_DIRECTORY}:/dist/custom
+      - ${ASSETS_DIRECTORY}/geonature:/assets
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${GEONATURE_BACKEND_CONTAINER_NAME}-http.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`${GEONATURE_BACKEND_PREFIX}`)"
+      - "traefik.http.routers.${GEONATURE_BACKEND_CONTAINER_NAME}-http.entrypoints=web"
+      - "traefik.http.routers.${GEONATURE_BACKEND_CONTAINER_NAME}-http.middlewares=https-redirectscheme@file"
+      - "traefik.http.routers.${GEONATURE_BACKEND_CONTAINER_NAME}-https.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`${GEONATURE_BACKEND_PREFIX}`)"
+      - "traefik.http.routers.${GEONATURE_BACKEND_CONTAINER_NAME}-https.entrypoints=websecure"
+      - "traefik.http.routers.${GEONATURE_BACKEND_CONTAINER_NAME}-https.tls=${TRAEFIK_TLS}"
+      - "traefik.http.routers.${GEONATURE_BACKEND_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
+      - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
+    healthcheck:
+      test: ["CMD-SHELL", "/assets/healthcheck_backend.sh"]
+      interval: ${GEONATURE_BACKEND_HEALTHCHECK_INTERVAL}
+      timeout: 10s
+      retries: 30
+      start_period: 5s
+    logging:
+      options:
+        tag: ${GEONATURE_BACKEND_CONTAINER_NAME}
+
+  atlas:
+    <<: *defaults
+    networks:
+      - default
+      - traefik
+    depends_on:
+      geonature-backend:
+        condition: service_healthy
+    image: ${ATLAS_IMAGE}
+    container_name: ${ATLAS_CONTAINER_NAME}
+    environment:
+      - http_proxy=${HTTP_PROXY}
+      - https_proxy=${HTTPS_PROXY}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT= ${POSTGRES_PORT}
+      - ATLAS_ALTITUDES=${ATLAS_ALTITUDES}
+      - ATLAS_TYPE_TERRITOIRE=${ATLAS_TYPE_TERRITOIRE}
+      - ATLAS_TYPE_MAILLE=${ATLAS_TYPE_MAILLE}
+      - ATLAS_INSTALL_SCHEMA=${ATLAS_INSTALL_SCHEMA}
+      - ATLAS_RESET_SCHEMA=${ATLAS_RESET_SCHEMA}
+      - ATLAS_URL_APPLICATION=${ATLAS_URL_APPLICATION}
+      - ATLAS_APPLICATION_ROOT=${ATLAS_PREFIX}
+      - ATLAS_REMOTE_MEDIAS_URL=${ATLAS_REMOTE_MEDIAS_URL}
+      - ATLAS_TAXHUB_URL=${ATLAS_REMOTE_MEDIAS_URL}
+      - ATLAS_REDIMENSIONNEMENT_IMAGE=${ATLAS_REDIMENSIONNEMENT_IMAGE}
+      - ATLAS_SECRET_KEY=${ATLAS_SECRET_KEY}
+      - ATLAS_SQLALCHEMY_DATABASE_URI=${ATLAS_SQLALCHEMY_DATABASE_URI}
+      - ATLAS_TEMPLATES_AUTO_RELOAD=true
+    volumes:
+      - ${ATLAS_VOLUME_CONFIG_DIRECTORY}:/dist/config
+      - ${ATLAS_VOLUME_CUSTOM_DIRECTORY}:/dist/static/custom
+      - ${ASSETS_DIRECTORY}/atlas:/assets
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${ATLAS_CONTAINER_NAME}-http.rule=Host(`${ATLAS_DOMAIN}`) && PathPrefix(`${ATLAS_PREFIX}`)"
+      - "traefik.http.routers.${ATLAS_CONTAINER_NAME}-http.entrypoints=web"
+      - "traefik.http.routers.${ATLAS_CONTAINER_NAME}-http.middlewares=https-redirectscheme@file"
+      - "traefik.http.routers.${ATLAS_CONTAINER_NAME}-https.rule=Host(`${ATLAS_DOMAIN}`) && PathPrefix(`${ATLAS_PREFIX}`)"
+      - "traefik.http.routers.${ATLAS_CONTAINER_NAME}-https.entrypoints=websecure"
+      - "traefik.http.routers.${ATLAS_CONTAINER_NAME}-https.tls=${TRAEFIK_TLS}"
+      - "traefik.http.routers.${ATLAS_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
+      - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
+    healthcheck:
+      test: ["CMD-SHELL", "/assets/healthcheck.sh"]
+      interval: ${ATLAS_HEALTHCHECK_INTERVAL}
+      timeout: 10s
+      retries: 20
+      start_period: 0s
+    logging:
+      options:
+        tag: ${ATLAS_CONTAINER_NAME}
