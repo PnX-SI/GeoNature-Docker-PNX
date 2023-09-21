@@ -19,6 +19,7 @@ x-geonature-backend-defaults: &geonature-backend-defaults
     - GEONATURE_CELERY__result_backend=${GEONATURE_CELERY__result_backend}
     - GEONATURE_SECRET_KEY=${GEONATURE_SECRET_KEY}
     - GEONATURE_SKIP_POPULATE_DB=${GEONATURE_SKIP_POPULATE_DB}
+    - CUSTOM_STATIC_FOLDER=/dist/custom
     - srid_local=${GEONATURE_SRID_LOCAL}
     - add_sample_data=${GEONATURE_ADD_SAMPLE_DATA}
     - install_bdc_statuts=${GEONATURE_INSTALL_BDC_STATUTS}
