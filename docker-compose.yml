@@ -236,8 +236,11 @@ services:
     environment:
       - NGINX_LOCATION=${GEONATURE_FRONTEND_PREFIX}
       - API_ENDPOINT="${GEONATURE_API_ENDPOINT}"
+      - GEONATURE_BACKEND_PREFIX=${GEONATURE_BACKEND_PREFIX}
     volumes:
       - ${ASSETS_DIRECTORY}/geonature:/assets
+      - ${GEONATURE_VOLUME_MEDIA_DIRECTORY}:/media
+      - ${ASSETS_DIRECTORY}/geonature/media.conf.template:/etc/nginx/templates/default.conf.template
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
@@ -248,11 +251,14 @@ services:
 
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-http.entrypoints=web"
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-http.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`${GEONATURE_FRONTEND_PREFIX}`)"
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-http.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`${GEONATURE_BACKEND_PREFIX}/media/`)"
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-http.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`/`)"
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-http.priority=2"
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-http.middlewares=https-redirectscheme@file"
 
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.entrypoints=websecure"
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`${GEONATURE_FRONTEND_PREFIX}`)"
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`${GEONATURE_BACKEND_PREFIX}/media/`)"
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`/`)"
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.tls=${TRAEFIK_TLS}"
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
