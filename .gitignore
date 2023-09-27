@@ -12,6 +12,7 @@ data/services/geonature/custom/*
 data/services/geonature/data/*
 data/services/geonature/media/*/*
 data/services/geonature/media/celerybeat-schedule.db
+data/services/geonature/media/*.csv
 data/services/taxhub/static/*
 data/services/taxhub/config/*
 data/services/taxhub/media/*
@@ -27,6 +28,8 @@ data/storage/pgadmin/*
 data/storage/redis
 
 projects/*
+
+assets/geonature/taxref/missing_taxons.csv
 
 *.ini
 
