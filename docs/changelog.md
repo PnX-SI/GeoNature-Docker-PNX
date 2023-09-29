@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 0.1.4 (2023-09-29)
+
+### Correction
+
+- correction redirection racine -> frontend
+
 ## 0.1.3 (2023-09-29)
 
 ### Evolutions
