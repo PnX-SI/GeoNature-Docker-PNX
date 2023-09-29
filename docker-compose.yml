@@ -81,7 +81,7 @@ services:
       - ${POSTGRES_VOLUME_SCRIPTS_DIRECTORY}:/scripts
     healthcheck:
       test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB}", "-U", "${POSTGRES_USER}", "-h", "localhost"]
-      interval: 10s
+      interval: 2s
       timeout: 5s
       retries: 5
     logging:
@@ -245,24 +245,36 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
 
-      - "traefik.http.middlewares.${GEONATURE_FRONTEND_CONTAINER_NAME}-redirect.redirectregex.regex=^https://${GEONATURE_DOMAIN}/?$"
-      - "traefik.http.middlewares.${GEONATURE_FRONTEND_CONTAINER_NAME}-redirect.redirectregex.replacement=https://${GEONATURE_DOMAIN}/geonature/"
-      - "traefik.http.middlewares.${GEONATURE_FRONTEND_CONTAINER_NAME}-redirect.redirectregex.permanent=true"
+      - "traefik.http.middlewares.redirect_root_to_frontend.redirectregex.regex=^https://${GEONATURE_DOMAIN}/?$"
+      - "traefik.http.middlewares.redirect_root_to_frontend.redirectregex.replacement=https://${GEONATURE_DOMAIN}/geonature/"
+      - "traefik.http.middlewares.redirect_root_to_frontend.redirectregex.permanent=true"
 
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-http.entrypoints=web"
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-http.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`${GEONATURE_FRONTEND_PREFIX}`)"
-      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-http.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`${GEONATURE_BACKEND_PREFIX}/media/`)"
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-http.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`/`)"
-      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-http.priority=2"
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-http.middlewares=https-redirectscheme@file"
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-http.priority=1"
 
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.entrypoints=websecure"
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`${GEONATURE_FRONTEND_PREFIX}`)"
-      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`${GEONATURE_BACKEND_PREFIX}/media/`)"
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`/`)"
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.tls=${TRAEFIK_TLS}"
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
-      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.middlewares=${GEONATURE_FRONTEND_CONTAINER_NAME}-redirect"
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.middlewares=redirect_root_to_frontend"
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.priority=1"
+
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-media-http.entrypoints=web"
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-media-http.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`${GEONATURE_BACKEND_PREFIX}/media/`)"
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-media-http.middlewares=https-redirectscheme@file"
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-media-http.priority=3"
+
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-media-https.entrypoints=websecure"
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-media-https.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`${GEONATURE_BACKEND_PREFIX}/media/`)"
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-media-https.tls=${TRAEFIK_TLS}"
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-media-https.tls.certresolver=${TRAEFIK_RESOLVER}"
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-media-https.middlewares=redirect_root_to_frontend"
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-media-https.priority=3"
+
 
     healthcheck:
       test: ["CMD", "/assets/healthcheck_frontend.sh"]
@@ -307,10 +319,12 @@ services:
       - "traefik.http.routers.${GEONATURE_BACKEND_CONTAINER_NAME}-http.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`${GEONATURE_BACKEND_PREFIX}`)"
       - "traefik.http.routers.${GEONATURE_BACKEND_CONTAINER_NAME}-http.entrypoints=web"
       - "traefik.http.routers.${GEONATURE_BACKEND_CONTAINER_NAME}-http.middlewares=https-redirectscheme@file"
+      - "traefik.http.routers.${GEONATURE_BACKEND_CONTAINER_NAME}-http.priority=2"
       - "traefik.http.routers.${GEONATURE_BACKEND_CONTAINER_NAME}-https.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`${GEONATURE_BACKEND_PREFIX}`)"
       - "traefik.http.routers.${GEONATURE_BACKEND_CONTAINER_NAME}-https.entrypoints=websecure"
       - "traefik.http.routers.${GEONATURE_BACKEND_CONTAINER_NAME}-https.tls=${TRAEFIK_TLS}"
       - "traefik.http.routers.${GEONATURE_BACKEND_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
+      - "traefik.http.routers.${GEONATURE_BACKEND_CONTAINER_NAME}-https.priority=2"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
     healthcheck:
       test: ["CMD-SHELL", "/assets/healthcheck_backend.sh"]
