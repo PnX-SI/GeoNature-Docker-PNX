@@ -48,3 +48,5 @@
         FROM taxonomie.IMPORT_CD_NOM_REPLACE r
         WHERE r.cd_nom = t.cd_nom
     ;
+
+-- cal

@@ -33,7 +33,7 @@ psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -h localhost -f /backup/geonature_bac
 ```
 psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -h localhost -c "CREATE INDEX trgm_idx ON atlas.vm_search_taxon USING gist (search_name gist_trgm_ops);"
 
-psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -h localhost -c "CREATE INDEX i_tri_vm_taxref_list_forautocomplete_search_name ON taxonomie.vm_taxref_list_forautocomplete USING gist (search_name gist_trgm_ops);" # long
+psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -h localhost -c "CREATE INDEX i_tri_vm_taxref_list_forautocomplete_search_name ON taxonomie.vm_taxref_list_forautocomplete USING gist (search_name gist_trgm_ops);" #         long
 ```
 
 #### MAJ à la main des modules
