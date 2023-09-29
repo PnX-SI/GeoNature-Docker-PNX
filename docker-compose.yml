@@ -245,9 +245,9 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=${TRAEFIK_NETWORK_NAME}"
 
-      - "traefik.http.middlewares.redirect_root_to_frontend.redirectregex.regex=^https://${GEONATURE_DOMAIN}/?$"
-      - "traefik.http.middlewares.redirect_root_to_frontend.redirectregex.replacement=https://${GEONATURE_DOMAIN}/geonature/"
-      - "traefik.http.middlewares.redirect_root_to_frontend.redirectregex.permanent=true"
+      - "traefik.http.middlewares.r${GEONATURE_FRONTEND_CONTAINER_NAME}-redirect.redirectregex.regex=^https://${GEONATURE_DOMAIN}/?$"
+      - "traefik.http.middlewares.r${GEONATURE_FRONTEND_CONTAINER_NAME}-redirect.redirectregex.replacement=https://${GEONATURE_DOMAIN}/geonature/"
+      - "traefik.http.middlewares.r${GEONATURE_FRONTEND_CONTAINER_NAME}-redirect.redirectregex.permanent=true"
 
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-http.entrypoints=web"
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-http.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`${GEONATURE_FRONTEND_PREFIX}`)"
@@ -260,7 +260,7 @@ services:
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`/`)"
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.tls=${TRAEFIK_TLS}"
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.tls.certresolver=${TRAEFIK_RESOLVER}"
-      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.middlewares=redirect_root_to_frontend"
+      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.middlewares=r${GEONATURE_FRONTEND_CONTAINER_NAME}-redirect"
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-https.priority=1"
 
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-media-http.entrypoints=web"
@@ -272,7 +272,6 @@ services:
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-media-https.rule=Host(`${GEONATURE_DOMAIN}`) && PathPrefix(`${GEONATURE_BACKEND_PREFIX}/media/`)"
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-media-https.tls=${TRAEFIK_TLS}"
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-media-https.tls.certresolver=${TRAEFIK_RESOLVER}"
-      - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-media-https.middlewares=redirect_root_to_frontend"
       - "traefik.http.routers.${GEONATURE_FRONTEND_CONTAINER_NAME}-media-https.priority=3"
 
 
