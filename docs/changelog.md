@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 0.1.5 (2023-10-12)
+
+### Correction
+
+- config UH non prise en compte
+
 ## 0.1.4 (2023-09-29)
 
 ### Correction
