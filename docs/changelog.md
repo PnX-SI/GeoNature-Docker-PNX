@@ -5,7 +5,7 @@
 ### Correction
 
 - config TH non prise en compte
-
+- ajout d'un paramètre `TAXHUB_UPLOAD_CONFIG`
 ## 0.1.5 (2023-10-12)
 
 ### Correction

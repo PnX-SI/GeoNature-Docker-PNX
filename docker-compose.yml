@@ -187,6 +187,7 @@ services:
       - TAXHUB_SQLALCHEMY_DATABASE_URI=${TAXHUB_SQLALCHEMY_DATABASE_URI}
       - TAXHUB_SECRET_KEY=${TAXHUB_SECRET_KEY}
       - TAXHUB_SETTINGS=/dist/config/config.py
+      - TAXHUB_UPLOAD_FOLDER=/static/medias
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.${TAXHUB_CONTAINER_NAME}-http.rule=Host(`${TAXHUB_DOMAIN}`) && PathPrefix(`${TAXHUB_PREFIX}`)"
