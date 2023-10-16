@@ -186,7 +186,7 @@ services:
       - TAXHUB_APPLICATION_ROOT=${TAXHUB_PREFIX}
       - TAXHUB_SQLALCHEMY_DATABASE_URI=${TAXHUB_SQLALCHEMY_DATABASE_URI}
       - TAXHUB_SECRET_KEY=${TAXHUB_SECRET_KEY}
-      - TAXHUB_SETTINGS=${TAXHUB_SETTINGS}
+      - TAXHUB_SETTINGS=/dist/config/config.py
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.${TAXHUB_CONTAINER_NAME}-http.rule=Host(`${TAXHUB_DOMAIN}`) && PathPrefix(`${TAXHUB_PREFIX}`)"
