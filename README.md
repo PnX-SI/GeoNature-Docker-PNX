@@ -10,7 +10,7 @@ Il s'appuie sur les images Docker et docker-compose officiels de GeoNature (http
  - `taxhub`
  - `geonature-backend`
  - `geonature-frontend`
- - `geonature-worker`: peut reprendre certaine tâches de geonature (import, export, mail, etc...)
+ - `geonature-worker` : pour éxécuter certaines tâches asynchrones de GeoNature (import, export, mail, etc...)
  - `redis`
  - `traefik`
 
@@ -29,9 +29,9 @@ usershub             5001/tcp
 ## Utilisation
 
 - Rapatrier le dépôt
-- Se placer dans le répertoire du dépôt
+- Se placer dans le répertoire téléchargé
 - Créer un fichier `.env` (copier le fichier d'exemple - `cp .env.example .env`) et modifiez le (`nano .env`)
-- Créer les fichiers de configuration (vous pouver copier les fichiers de config *vide* d'un seul coup avec la commande `./scrits/init_applications_config.sh .env`)
+- Créer les fichiers de configuration (vous pouver copier les fichiers de config *vide* d'un seul coup avec la commande `./scripts/init_applications_config.sh .env`)
 - Lancer les dockers avec la commande `docker compose up -d`
 - Les logs sont accessibles avec la commande `docker compose logs -f` ou `docker compose -f <nom du service>`
 
