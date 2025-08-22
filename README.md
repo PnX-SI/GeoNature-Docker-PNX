@@ -3,6 +3,8 @@
 Dépôt de gestion des scripts Docker de déploiement de GeoNature multi-instances des parcs nationaux.  
 Il s'appuie sur les images Docker et docker-compose officiels de GeoNature (https://github.com/PnX-SI/GeoNature-Docker-services), mais en y ajoutant les compléments spécifiques au déploiement des parcs nationaux (multi-instances, ajout de GeoNature-atlas, de pgAdmin, de scripts de sauvegarde...).
 
+⚠️ Depuis 2025, ce dépôt spécifique n'est plus utilisé pour déployer les GeoNature des parcs nationaux avec Docker. Ce sont les docker officiels qui sont désormais utilisés (https://github.com/PnX-SI/GeoNature-Docker-services), en y ajoutant la gestion multi-instance, GeoNature-atlas et pgAdmin.
+
 ![Schema](docs/2024-04-Docker-PNX.png)
 
 ## Les services
